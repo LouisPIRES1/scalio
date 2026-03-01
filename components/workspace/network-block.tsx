@@ -1,0 +1,223 @@
+'use client'
+
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ChevronDown, Trash2, Plus, Edit3, Check, X, AlertCircle } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import type { NetworkGroup, NetworkLineItem } from '@/types'
+import { NETWORK_META } from '@/types'
+
+interface NetworkBlockProps {
+  network: NetworkGroup
+  onRemove: () => void
+  onUpdateItem: (itemId: string, quantity: number) => void
+  onDeleteItem: (itemId: string) => void
+}
+
+function ConfidenceDot({ value }: { value: number }) {
+  const pct = Math.round(value * 100)
+  const color = pct >= 90 ? 'bg-emerald-500' : pct >= 75 ? 'bg-amber-500' : 'bg-red-500'
+  const textColor = pct >= 90 ? 'text-emerald-700' : pct >= 75 ? 'text-amber-700' : 'text-red-700'
+  return (
+    <span className={cn('flex items-center gap-1 text-xs font-semibold', textColor)}>
+      <span className={cn('h-1.5 w-1.5 rounded-full', color)} />
+      {pct}%
+    </span>
+  )
+}
+
+function LineItem({
+  item,
+  networkColor,
+  onUpdate,
+  onDelete,
+}: {
+  item: NetworkLineItem
+  networkColor: string
+  onUpdate: (q: number) => void
+  onDelete: () => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(String(item.quantity))
+
+  const handleSave = () => {
+    const val = parseFloat(draft)
+    if (!isNaN(val) && val >= 0) onUpdate(val)
+    setEditing(false)
+  }
+
+  return (
+    <div className="group flex items-center gap-2 py-1.5 px-3 rounded-lg hover:bg-slate-50 transition-colors">
+      {/* Label */}
+      <div
+        className="h-1.5 w-1.5 rounded-full shrink-0"
+        style={{ backgroundColor: networkColor, opacity: 0.7 }}
+      />
+      <span className="text-xs font-mono font-semibold text-slate-700 w-16 shrink-0">
+        {item.label}
+      </span>
+
+      {/* Quantity */}
+      {editing ? (
+        <div className="flex-1 flex items-center gap-1">
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSave()
+              if (e.key === 'Escape') setEditing(false)
+            }}
+            className="w-16 text-xs font-semibold text-slate-900 border border-blue-300 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+          <span className="text-xs text-slate-400">{item.unit}</span>
+          <button onClick={handleSave} className="text-emerald-600 hover:text-emerald-700">
+            <Check className="h-3.5 w-3.5" />
+          </button>
+          <button onClick={() => setEditing(false)} className="text-slate-400 hover:text-slate-600">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : (
+        <div className="flex-1 flex items-center gap-1">
+          <span
+            className={cn(
+              'text-xs font-semibold text-slate-900',
+              item.isEdited && 'text-blue-700'
+            )}
+          >
+            {item.quantity.toFixed(1)} {item.unit}
+          </span>
+          {item.isEdited && (
+            <span className="text-[9px] font-medium text-blue-500 bg-blue-50 px-1 rounded">modifié</span>
+          )}
+          {item.isManual && (
+            <span className="text-[9px] font-medium text-violet-500 bg-violet-50 px-1 rounded">manuel</span>
+          )}
+        </div>
+      )}
+
+      {/* Elbows */}
+      {item.elbows !== undefined && (
+        <span className="text-xs text-slate-400 shrink-0">+{item.elbows} c</span>
+      )}
+
+      {/* Actions (visible on hover) */}
+      {!editing && (
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          <button
+            onClick={() => setEditing(true)}
+            className="flex h-5 w-5 items-center justify-center rounded text-slate-300 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+          >
+            <Edit3 className="h-3 w-3" />
+          </button>
+          <button
+            onClick={onDelete}
+            className="flex h-5 w-5 items-center justify-center rounded text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function NetworkBlock({ network, onRemove, onUpdateItem, onDeleteItem }: NetworkBlockProps) {
+  const [expanded, setExpanded] = useState(true)
+  const meta = NETWORK_META[network.type]
+
+  const totalLinear = network.items
+    .filter((i) => i.unit === 'ml')
+    .reduce((acc, i) => acc + i.quantity, 0)
+
+  const totalElbows = network.items.reduce((acc, i) => acc + (i.elbows ?? 0), 0)
+
+  const totalUnits = network.items
+    .filter((i) => i.unit === 'u')
+    .reduce((acc, i) => acc + i.quantity, 0)
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: -8, scale: 0.99 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -8, scale: 0.99 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className={cn('rounded-xl border overflow-hidden shadow-sm', meta.borderColor, meta.bgColor)}
+    >
+      {/* Header */}
+      <div
+        className="flex items-center gap-2.5 px-3.5 py-2.5 cursor-pointer hover:brightness-[0.98] transition-all"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div
+          className="h-3 w-3 rounded-full shrink-0"
+          style={{ backgroundColor: meta.color }}
+        />
+        <span className={cn('text-sm font-bold flex-1', meta.textColor)}>{meta.label}</span>
+
+        {/* Summary */}
+        <div className="flex items-center gap-3 text-xs text-slate-500">
+          {totalLinear > 0 && (
+            <span className="font-semibold text-slate-700">{totalLinear.toFixed(1)} ml</span>
+          )}
+          {totalElbows > 0 && (
+            <span>{totalElbows} c</span>
+          )}
+          {totalUnits > 0 && (
+            <span className="font-semibold text-slate-700">{totalUnits} u</span>
+          )}
+        </div>
+
+        <ConfidenceDot value={network.confidence} />
+
+        <button
+          onClick={(e) => { e.stopPropagation(); onRemove() }}
+          className="flex h-5 w-5 items-center justify-center rounded text-slate-300 hover:text-red-400 hover:bg-red-50 transition-colors ml-1"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+
+        <ChevronDown
+          className={cn('h-3.5 w-3.5 text-slate-400 transition-transform', expanded && 'rotate-180')}
+        />
+      </div>
+
+      {/* Items */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-slate-100/80 bg-white/60 py-1">
+              {network.items.map((item) => (
+                <LineItem
+                  key={item.id}
+                  item={item}
+                  networkColor={meta.color}
+                  onUpdate={(q) => onUpdateItem(item.id, q)}
+                  onDelete={() => onDeleteItem(item.id)}
+                />
+              ))}
+
+              {/* Confidence warning */}
+              {network.confidence < 0.8 && (
+                <div className="mx-3 mb-2 mt-1 flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-100 px-2.5 py-1.5">
+                  <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-amber-700 font-medium">
+                    Fiabilité réduite — vérification recommandée
+                  </p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  )
+}
