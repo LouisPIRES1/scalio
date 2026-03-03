@@ -100,7 +100,7 @@ function LineItem({
 
           {/* Elbows */}
           {item.elbows !== undefined && item.elbows > 0 && (
-            <span className="font-data text-sm font-normal tabular-nums text-slate-500 shrink-0">
+            <span className="font-data text-sm font-normal tabular-nums text-slate-600 shrink-0">
               · {item.elbows}c
             </span>
           )}
