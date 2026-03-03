@@ -61,8 +61,8 @@ function LineItem({
         style={{ backgroundColor: networkColor, opacity: 0.5 }}
       />
 
-      {/* Designation — secondary info, left */}
-      <span className="flex-1 text-xs font-medium text-slate-500 truncate">
+      {/* Designation — primary identifier, bold */}
+      <span className="flex-1 text-xs font-semibold text-slate-700 truncate">
         {item.label}
       </span>
 
@@ -91,8 +91,8 @@ function LineItem({
         <>
           {/* Value — primary data, DM Mono */}
           <span className={cn(
-            'font-data text-sm font-medium tabular-nums shrink-0',
-            item.isEdited ? 'text-blue-600' : 'text-slate-800'
+            'font-data text-sm font-normal tabular-nums shrink-0',
+            item.isEdited ? 'text-blue-600' : 'text-slate-600'
           )}>
             {item.quantity.toFixed(1)}
             <span className="font-sans text-xs font-normal text-slate-400 ml-1">{item.unit}</span>
