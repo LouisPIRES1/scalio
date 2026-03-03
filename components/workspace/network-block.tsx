@@ -94,8 +94,7 @@ function LineItem({
             'font-data text-sm font-normal tabular-nums shrink-0',
             item.isEdited ? 'text-blue-600' : 'text-slate-600'
           )}>
-            {item.quantity.toFixed(1)}
-            <span className="font-sans text-xs font-normal text-slate-400 ml-1">{item.unit}</span>
+            {item.quantity.toFixed(1)} {item.unit}
           </span>
 
           {/* Elbows */}
@@ -176,7 +175,7 @@ export function NetworkBlock({
         <div className="flex items-center gap-2 shrink-0">
           {totalLinear > 0 && (
             <span className="font-data text-xs font-medium text-slate-600 tabular-nums">
-              {totalLinear.toFixed(1)}<span className="font-sans font-normal text-slate-400 ml-0.5">ml</span>
+              {totalLinear.toFixed(1)} ml
             </span>
           )}
           {totalElbows > 0 && (
@@ -186,7 +185,7 @@ export function NetworkBlock({
           )}
           {totalUnits > 0 && (
             <span className="font-data text-xs font-medium text-slate-600 tabular-nums">
-              {totalUnits}<span className="font-sans font-normal text-slate-400 ml-0.5">u</span>
+              {totalUnits} u
             </span>
           )}
         </div>
