@@ -98,10 +98,10 @@ function LineItem({
             <span className="font-sans text-xs font-normal text-slate-400 ml-1">{item.unit}</span>
           </span>
 
-          {/* Elbows — important data, always readable */}
+          {/* Elbows */}
           {item.elbows !== undefined && item.elbows > 0 && (
-            <span className="text-xs font-medium text-slate-500 shrink-0">
-              · {item.elbows} coudes
+            <span className="font-data text-sm font-normal tabular-nums text-slate-500 shrink-0">
+              · {item.elbows}c
             </span>
           )}
 
@@ -180,8 +180,8 @@ export function NetworkBlock({
             </span>
           )}
           {totalElbows > 0 && (
-            <span className="text-xs font-medium text-slate-500">
-              {totalElbows} coudes
+            <span className="font-data text-xs font-medium text-slate-500 tabular-nums">
+              {totalElbows}c
             </span>
           )}
           {totalUnits > 0 && (
