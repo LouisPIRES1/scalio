@@ -95,7 +95,7 @@ export function ReportPanel({
       </div>
 
       {/* Content area */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="px-4 py-3">
           <AnimatePresence mode="popLayout">
             {selectedNetworks.length === 0 ? (
