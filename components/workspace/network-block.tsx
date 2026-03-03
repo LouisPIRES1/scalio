@@ -51,18 +51,20 @@ function LineItem({
 
   return (
     <div className="group flex items-center gap-2 py-1.5 px-3 rounded-lg hover:bg-slate-50 transition-colors">
-      {/* Label */}
+      {/* Color dot */}
       <div
         className="h-1.5 w-1.5 rounded-full shrink-0"
-        style={{ backgroundColor: networkColor, opacity: 0.7 }}
+        style={{ backgroundColor: networkColor, opacity: 0.45 }}
       />
-      <span className="text-xs font-mono font-semibold text-slate-700 w-16 shrink-0">
+
+      {/* Designation — context, not the hero */}
+      <span className="flex-1 text-xs font-medium text-slate-500 truncate">
         {item.label}
       </span>
 
-      {/* Quantity */}
+      {/* Quantity — editing mode */}
       {editing ? (
-        <div className="flex-1 flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           <input
             autoFocus
             value={draft}
@@ -71,7 +73,7 @@ function LineItem({
               if (e.key === 'Enter') handleSave()
               if (e.key === 'Escape') setEditing(false)
             }}
-            className="w-16 text-xs font-semibold text-slate-900 border border-blue-300 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-14 font-data text-sm font-medium text-slate-900 border border-blue-300 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-right"
           />
           <span className="text-xs text-slate-400">{item.unit}</span>
           <button onClick={handleSave} className="text-emerald-600 hover:text-emerald-700">
@@ -82,30 +84,26 @@ function LineItem({
           </button>
         </div>
       ) : (
-        <div className="flex-1 flex items-center gap-1">
-          <span
-            className={cn(
-              'text-xs font-semibold text-slate-900',
-              item.isEdited && 'text-blue-700'
-            )}
-          >
-            {item.quantity.toFixed(1)} {item.unit}
+        /* Value — the hero, DM Mono, right-aligned */
+        <div className="flex items-baseline gap-1 shrink-0">
+          <span className={cn('font-data text-sm font-medium tabular-nums', item.isEdited ? 'text-blue-600' : 'text-slate-800')}>
+            {item.quantity.toFixed(1)}
           </span>
+          <span className="text-[11px] text-slate-400 font-normal">{item.unit}</span>
           {item.isEdited && (
-            <span className="text-[9px] font-medium text-blue-500 bg-blue-50 px-1 rounded">modifié</span>
-          )}
-          {item.isManual && (
-            <span className="text-[9px] font-medium text-violet-500 bg-violet-50 px-1 rounded">manuel</span>
+            <span className="text-[9px] font-medium text-blue-500 bg-blue-50 px-1 py-px rounded ml-0.5">édité</span>
           )}
         </div>
       )}
 
-      {/* Elbows */}
-      {item.elbows !== undefined && (
-        <span className="text-xs text-slate-400 shrink-0">+{item.elbows} c</span>
+      {/* Elbows — compact badge */}
+      {!editing && item.elbows !== undefined && item.elbows > 0 && (
+        <span className="shrink-0 text-[10px] text-slate-400 bg-slate-100 px-1.5 py-px rounded-full leading-none">
+          {item.elbows}c
+        </span>
       )}
 
-      {/* Actions (visible on hover, hidden in read-only) */}
+      {/* Actions on hover */}
       {!editing && !isReadOnly && (
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           <button
@@ -161,15 +159,19 @@ export function NetworkBlock({ network, onRemove, onUpdateItem, onDeleteItem, is
         <span className={cn('text-sm font-bold flex-1', meta.textColor)}>{meta.label}</span>
 
         {/* Summary */}
-        <div className="flex items-center gap-3 text-xs text-slate-500">
+        <div className="flex items-center gap-2.5">
           {totalLinear > 0 && (
-            <span className="font-semibold text-slate-700">{totalLinear.toFixed(1)} ml</span>
+            <span className="font-data text-xs font-medium text-slate-600 tabular-nums">
+              {totalLinear.toFixed(1)} <span className="text-slate-400 font-normal">ml</span>
+            </span>
           )}
           {totalElbows > 0 && (
-            <span>{totalElbows} c</span>
+            <span className="text-[11px] text-slate-400">{totalElbows}c</span>
           )}
           {totalUnits > 0 && (
-            <span className="font-semibold text-slate-700">{totalUnits} u</span>
+            <span className="font-data text-xs font-medium text-slate-600 tabular-nums">
+              {totalUnits} <span className="text-slate-400 font-normal">u</span>
+            </span>
           )}
         </div>
 
