@@ -22,7 +22,13 @@ export default function AnalysePage() {
   const canSubmit = file && projectName.trim() && clientName.trim()
 
   const handleSubmit = () => {
-    if (!canSubmit) return
+    if (!canSubmit || !file) return
+    // Store uploaded file as an object URL so the workspace can display it
+    const prevUrl = sessionStorage.getItem('scalio_plan_url')
+    if (prevUrl) URL.revokeObjectURL(prevUrl)
+    const objectUrl = URL.createObjectURL(file)
+    sessionStorage.setItem('scalio_plan_url', objectUrl)
+    sessionStorage.setItem('scalio_plan_mime', file.type)
     setIsProcessing(true)
   }
 

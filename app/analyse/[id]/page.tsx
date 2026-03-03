@@ -1,31 +1,15 @@
 'use client'
 
 import { use, useState, useEffect, useRef, useCallback } from 'react'
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { ArrowLeft, FileDown, Layers, Lock, Pencil } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
+import { PlanCanvas } from '@/components/workspace/plan-canvas'
 import { ReportPanel } from '@/components/workspace/report-panel'
 import { Button } from '@/components/ui/button'
 import { mockNetworkGroups, mockPlans, mockProjects } from '@/lib/mock-data'
 import { exportMetrePdf } from '@/lib/export-pdf'
 import type { NetworkGroup } from '@/types'
-
-// SSR-safe Konva import
-const PlanCanvas = dynamic(
-  () => import('@/components/workspace/plan-canvas').then((m) => m.PlanCanvas),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex-1 flex items-center justify-center bg-[#F5F7FC]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 rounded-full border-2 border-blue-200 border-t-blue-600 animate-spin" />
-          <p className="text-sm text-slate-400 font-medium">Chargement du plan…</p>
-        </div>
-      </div>
-    ),
-  }
-)
 
 export default function WorkspacePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -45,7 +29,17 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [networks, setNetworks] = useState<NetworkGroup[]>(initialNetworks)
   const [isReadOnly, setIsReadOnly] = useState(isAnalysed)
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 })
+  const [imageUrl, setImageUrl] = useState<string | undefined>()
+  const [imageMime, setImageMime] = useState<string | undefined>()
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Read uploaded plan from sessionStorage (client-side only)
+  useEffect(() => {
+    const url = sessionStorage.getItem('scalio_plan_url') ?? undefined
+    const mime = sessionStorage.getItem('scalio_plan_mime') ?? undefined
+    setImageUrl(url)
+    setImageMime(mime)
+  }, [])
 
   useEffect(() => {
     const measure = () => {
@@ -197,6 +191,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               onNetworkClick={handleNetworkClick}
               width={canvasSize.width}
               height={canvasSize.height}
+              imageUrl={imageUrl}
+              imageMime={imageMime}
             />
           </div>
 

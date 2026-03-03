@@ -16,8 +16,12 @@ export function UploadZone({ onFileSelect, selectedFile, onClear }: UploadZonePr
   const [error, setError] = useState<string | null>(null)
 
   const validateFile = (file: File): boolean => {
-    if (file.type !== 'application/pdf') {
-      setError('Seuls les fichiers PDF sont acceptés.')
+    const allowed = [
+      'application/pdf',
+      'image/png', 'image/jpeg', 'image/tiff', 'image/bmp', 'image/webp',
+    ]
+    if (!allowed.includes(file.type)) {
+      setError('Format non supporté. Déposez un PDF ou une image (PNG, JPG, TIFF…).')
       return false
     }
     if (file.size > 200 * 1024 * 1024) {
@@ -98,7 +102,7 @@ export function UploadZone({ onFileSelect, selectedFile, onClear }: UploadZonePr
       >
         <input
           type="file"
-          accept="application/pdf"
+          accept="application/pdf,image/png,image/jpeg,image/tiff,image/bmp,image/webp"
           className="absolute inset-0 opacity-0 cursor-pointer"
           onChange={handleInputChange}
         />
@@ -135,14 +139,14 @@ export function UploadZone({ onFileSelect, selectedFile, onClear }: UploadZonePr
                 Glissez votre plan PDF ici
               </p>
               <p className="mt-1 text-xs text-slate-400">
-                ou <span className="text-blue-600 font-medium">cliquez pour sélectionner</span> — jusqu'à 200 Mo
+                ou <span className="text-blue-600 font-medium">cliquez pour sélectionner</span> — PDF ou image · jusqu'à 200 Mo
               </p>
             </motion.div>
           )}
         </AnimatePresence>
 
         <div className="mt-4 flex items-center gap-4">
-          {['Plan vectoriel', 'Plan scanné', 'Multi-pages'].map((tag) => (
+          {['PDF', 'PNG · JPG', 'TIFF · BMP'].map((tag) => (
             <span key={tag} className="text-[11px] font-medium text-slate-400 bg-white border border-slate-100 px-2 py-0.5 rounded-full">
               {tag}
             </span>
