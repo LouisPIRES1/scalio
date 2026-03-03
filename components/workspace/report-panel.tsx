@@ -22,6 +22,7 @@ interface ReportPanelProps {
   onUpdateItem: (networkId: string, itemId: string, quantity: number) => void
   onDeleteItem: (networkId: string, itemId: string) => void
   onExport: () => void
+  isReadOnly?: boolean
 }
 
 export function ReportPanel({
@@ -30,6 +31,7 @@ export function ReportPanel({
   onUpdateItem,
   onDeleteItem,
   onExport,
+  isReadOnly,
 }: ReportPanelProps) {
   const selectedNetworks = networks.filter((n) => n.isSelected)
 
@@ -54,9 +56,11 @@ export function ReportPanel({
         <div>
           <h2 className="text-sm font-bold text-slate-900">Rapport de métré</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            {selectedNetworks.length === 0
-              ? 'Aucun réseau sélectionné'
-              : `${selectedNetworks.length} réseau${selectedNetworks.length > 1 ? 'x' : ''} sélectionné${selectedNetworks.length > 1 ? 's' : ''}`}
+            {isReadOnly
+              ? `${selectedNetworks.length} réseau${selectedNetworks.length > 1 ? 'x' : ''} analysé${selectedNetworks.length > 1 ? 's' : ''}`
+              : selectedNetworks.length === 0
+                ? 'Aucun réseau sélectionné'
+                : `${selectedNetworks.length} réseau${selectedNetworks.length > 1 ? 'x' : ''} sélectionné${selectedNetworks.length > 1 ? 's' : ''}`}
           </p>
         </div>
         {selectedNetworks.length > 0 && (
@@ -123,6 +127,7 @@ export function ReportPanel({
                       onUpdateItem(network.id, itemId, quantity)
                     }
                     onDeleteItem={(itemId) => onDeleteItem(network.id, itemId)}
+                    isReadOnly={isReadOnly}
                   />
                 ))}
               </div>

@@ -11,23 +11,15 @@ import { ProcessingModal } from '@/components/analyse/processing-modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 
 export default function AnalysePage() {
   const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
   const [projectName, setProjectName] = useState('')
   const [clientName, setClientName] = useState('')
-  const [corpsEtat, setCorpsEtat] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
 
-  const canSubmit = file && projectName.trim() && clientName.trim() && corpsEtat
+  const canSubmit = file && projectName.trim() && clientName.trim()
 
   const handleSubmit = () => {
     if (!canSubmit) return
@@ -119,23 +111,6 @@ export default function AnalysePage() {
                       className="h-9 text-sm border-slate-200 focus-visible:ring-blue-500"
                     />
                   </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                    Corps d'état <span className="text-red-500">*</span>
-                  </Label>
-                  <Select value={corpsEtat} onValueChange={setCorpsEtat}>
-                    <SelectTrigger className="h-9 text-sm border-slate-200 focus:ring-blue-500">
-                      <SelectValue placeholder="Sélectionnez le corps d'état" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="calorifuge">Calorifuge</SelectItem>
-                      <SelectItem value="flocage">Flocage</SelectItem>
-                      <SelectItem value="staff">Staff</SelectItem>
-                      <SelectItem value="mixte">Mixte (plusieurs corps d'état)</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 {/* Info note */}

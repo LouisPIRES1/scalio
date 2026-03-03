@@ -12,6 +12,7 @@ interface NetworkBlockProps {
   onRemove: () => void
   onUpdateItem: (itemId: string, quantity: number) => void
   onDeleteItem: (itemId: string) => void
+  isReadOnly?: boolean
 }
 
 function ConfidenceDot({ value }: { value: number }) {
@@ -31,11 +32,13 @@ function LineItem({
   networkColor,
   onUpdate,
   onDelete,
+  isReadOnly,
 }: {
   item: NetworkLineItem
   networkColor: string
   onUpdate: (q: number) => void
   onDelete: () => void
+  isReadOnly?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(String(item.quantity))
@@ -102,8 +105,8 @@ function LineItem({
         <span className="text-xs text-slate-400 shrink-0">+{item.elbows} c</span>
       )}
 
-      {/* Actions (visible on hover) */}
-      {!editing && (
+      {/* Actions (visible on hover, hidden in read-only) */}
+      {!editing && !isReadOnly && (
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           <button
             onClick={() => setEditing(true)}
@@ -123,7 +126,7 @@ function LineItem({
   )
 }
 
-export function NetworkBlock({ network, onRemove, onUpdateItem, onDeleteItem }: NetworkBlockProps) {
+export function NetworkBlock({ network, onRemove, onUpdateItem, onDeleteItem, isReadOnly }: NetworkBlockProps) {
   const [expanded, setExpanded] = useState(true)
   const meta = NETWORK_META[network.type]
 
@@ -172,12 +175,14 @@ export function NetworkBlock({ network, onRemove, onUpdateItem, onDeleteItem }: 
 
         <ConfidenceDot value={network.confidence} />
 
-        <button
-          onClick={(e) => { e.stopPropagation(); onRemove() }}
-          className="flex h-5 w-5 items-center justify-center rounded text-slate-300 hover:text-red-400 hover:bg-red-50 transition-colors ml-1"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
+        {!isReadOnly && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onRemove() }}
+            className="flex h-5 w-5 items-center justify-center rounded text-slate-300 hover:text-red-400 hover:bg-red-50 transition-colors ml-1"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
 
         <ChevronDown
           className={cn('h-3.5 w-3.5 text-slate-400 transition-transform', expanded && 'rotate-180')}
@@ -202,6 +207,7 @@ export function NetworkBlock({ network, onRemove, onUpdateItem, onDeleteItem }: 
                   networkColor={meta.color}
                   onUpdate={(q) => onUpdateItem(item.id, q)}
                   onDelete={() => onDeleteItem(item.id)}
+                  isReadOnly={isReadOnly}
                 />
               ))}
 

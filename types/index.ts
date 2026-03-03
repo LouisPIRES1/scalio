@@ -1,5 +1,3 @@
-export type CorpsEtat = 'calorifuge' | 'flocage' | 'staff' | 'mixte'
-
 export type NetworkType =
   | 'eau_chaude'
   | 'eau_froide'
@@ -30,6 +28,20 @@ export interface NetworkGroup {
   bbox: { x: number; y: number; width: number; height: number }
 }
 
+export type PlanStatus = 'termine' | 'en_cours' | 'en_attente'
+
+export interface Plan {
+  id: string
+  projectId: string
+  name: string       // e.g. "RDC", "R+1A", "R+2B"
+  floor: string      // e.g. "Sous-sol", "RDC", "R+1", "Toiture"
+  floorOrder: number // -99 = sous-sol profond, 0 = RDC, 1 = R+1, 999 = toiture
+  status: PlanStatus
+  totalLinear: number
+  networkGroups: NetworkGroup[]
+  analyzedAt?: string
+}
+
 export interface Project {
   id: string
   name: string
@@ -38,7 +50,6 @@ export interface Project {
   lastAnalysisAt: string
   plansCount: number
   totalLinear: number
-  corpsEtat: CorpsEtat
 }
 
 export interface MonthlyMetrics {

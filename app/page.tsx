@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Plus, ScanLine, Clock, Ruler, FolderOpen } from 'lucide-react'
@@ -8,8 +9,25 @@ import { MetricCard } from '@/components/dashboard/metric-card'
 import { ProjectsTable } from '@/components/dashboard/projects-table'
 import { Button } from '@/components/ui/button'
 import { mockMetrics, mockProjects } from '@/lib/mock-data'
+import type { Project } from '@/types'
+import type { StatusFilter } from '@/components/dashboard/projects-table'
 
 export default function DashboardPage() {
+  const [projects, setProjects] = useState<Project[]>(mockProjects)
+  const [filterStatus, setFilterStatus] = useState<StatusFilter>('all')
+
+  const handleRename = useCallback((id: string, newName: string) => {
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name: newName } : p)))
+  }, [])
+
+  const handleDelete = useCallback((id: string) => {
+    setProjects((prev) => prev.filter((p) => p.id !== id))
+  }, [])
+
+  const handleStatusChange = useCallback((id: string, status: Project['status']) => {
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)))
+  }, [])
+
   const date = new Intl.DateTimeFormat('fr-FR', {
     weekday: 'long',
     day: 'numeric',
@@ -21,14 +39,29 @@ export default function DashboardPage() {
     <AppShell>
       <div className="min-h-full">
         {/* Page header */}
-        <div className="sticky top-0 z-20 border-b border-slate-100 bg-white/90 backdrop-blur-sm px-8 py-4">
+        <div
+          className="sticky top-0 z-20 px-8 py-4 border-b"
+          style={{
+            background: 'rgba(245,247,250,0.92)',
+            backdropFilter: 'blur(12px)',
+            borderColor: '#E8ECF2',
+          }}
+        >
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-bold text-slate-900">Tableau de bord</h1>
-              <p className="text-sm text-slate-400 capitalize">{date}</p>
+              <h1 className="text-lg font-bold" style={{ color: '#0D1117', letterSpacing: '-0.02em' }}>
+                Tableau de bord
+              </h1>
+              <p className="label-xs mt-0.5 capitalize" style={{ color: '#9BA3B5' }}>{date}</p>
             </div>
             <Link href="/analyse">
-              <Button className="gap-2 bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-200 text-white rounded-lg font-semibold text-sm px-4 py-2 h-9">
+              <Button
+                className="gap-2 text-white font-semibold text-sm px-4 py-2 h-9 rounded-xl shadow-md transition-all"
+                style={{
+                  background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+                  boxShadow: '0 4px 12px rgba(29,78,216,0.3)',
+                }}
+              >
                 <Plus className="h-4 w-4" />
                 Nouvelle analyse
               </Button>
@@ -36,94 +69,98 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="px-8 py-6 space-y-8">
+        <div className="px-8 py-7 space-y-8">
+
           {/* Metrics band */}
           <section>
             <div className="grid grid-cols-4 gap-4">
-              <MetricCard
-                title="Plans analysés ce mois"
-                value={mockMetrics.plansAnalysed}
-                description="Mars 2026"
-                icon={<ScanLine />}
-                trend={18}
-                color="blue"
-              />
-              <MetricCard
-                title="Mètres linéaires extraits"
-                value={mockMetrics.totalLinear}
-                suffix="ml"
-                description="Volume traité"
-                icon={<Ruler />}
-                trend={23}
-                color="emerald"
-              />
-              <MetricCard
-                title="Temps économisé"
-                value={mockMetrics.timeSaved}
-                suffix="h"
-                description="vs métré manuel"
-                icon={<Clock />}
-                trend={12}
-                color="amber"
-              />
-              <MetricCard
-                title="Projets en cours"
-                value={mockMetrics.activeProjects}
-                description="Analyses actives"
-                icon={<FolderOpen />}
-                color="violet"
-              />
+              {[
+                { title: 'Plans analysés ce mois', value: mockMetrics.plansAnalysed, description: 'Mars 2026', icon: <ScanLine />, trend: 18, color: 'blue' as const },
+                { title: 'Mètres linéaires extraits', value: mockMetrics.totalLinear, suffix: 'ml', description: 'Volume traité', icon: <Ruler />, trend: 23, color: 'emerald' as const },
+                { title: 'Temps économisé', value: mockMetrics.timeSaved, suffix: 'h', description: 'vs métré manuel', icon: <Clock />, trend: 12, color: 'amber' as const },
+                { title: 'Projets en cours', value: mockMetrics.activeProjects, description: 'Analyses actives', icon: <FolderOpen />, color: 'violet' as const },
+              ].map((card, i) => (
+                <motion.div key={card.title} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
+                  <MetricCard {...card} />
+                </motion.div>
+              ))}
             </div>
           </section>
 
           {/* ROI callout */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 p-5 text-white shadow-lg shadow-blue-200"
+            transition={{ delay: 0.35, duration: 0.5 }}
+            className="relative overflow-hidden rounded-2xl p-6"
+            style={{
+              background: 'linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 60%, #2563EB 100%)',
+              boxShadow: '0 8px 32px rgba(29,78,216,0.25)',
+            }}
           >
+            {/* Decorative light line */}
+            <div
+              className="absolute top-0 left-0 right-0 h-px"
+              style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 30%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0.4) 70%, transparent 100%)' }}
+            />
+
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-blue-100">Ce mois-ci, Scalio vous a économisé</p>
-                <p className="text-3xl font-bold mt-0.5">52 heures de métré manuel</p>
-                <p className="text-sm text-blue-200 mt-1">
-                  Soit 7 journées reinvesties dans votre développement commercial.
+                <p className="label-xs mb-2" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                  Gain mensuel calculé
+                </p>
+                <p className="text-3xl font-bold text-white" style={{ letterSpacing: '-0.03em' }}>
+                  52 heures de métré économisées
+                </p>
+                <p className="text-sm mt-1.5" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                  Soit 7 journées entières réinvesties dans votre développement commercial.
                 </p>
               </div>
-              <div className="hidden lg:flex items-center gap-6 text-right shrink-0">
-                <div>
-                  <p className="text-xs text-blue-200 font-medium uppercase tracking-wide">Appels d&apos;offres</p>
-                  <p className="text-2xl font-bold">23</p>
+              <div className="hidden lg:flex items-center gap-8 shrink-0">
+                <div className="text-right">
+                  <p className="label-xs mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>Appels d&apos;offres</p>
+                  <p className="font-data text-2xl font-medium text-white">23</p>
                 </div>
-                <div className="h-8 w-px bg-blue-500" />
-                <div>
-                  <p className="text-xs text-blue-200 font-medium uppercase tracking-wide">Économies</p>
-                  <p className="text-2xl font-bold">2 600 €</p>
+                <div className="h-10 w-px" style={{ background: 'rgba(255,255,255,0.15)' }} />
+                <div className="text-right">
+                  <p className="label-xs mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>Économies</p>
+                  <p className="font-data text-2xl font-medium text-white">2 600 €</p>
                 </div>
               </div>
             </div>
-            <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
-            <div className="absolute -right-4 -bottom-8 h-28 w-28 rounded-full bg-white/5" />
+
+            {/* Decorative orbs */}
+            <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }} />
+            <div className="absolute -right-2 -bottom-8 h-20 w-20 rounded-full" style={{ background: 'rgba(255,255,255,0.03)' }} />
           </motion.div>
 
           {/* Projects table */}
           <section>
-            <div className="flex items-center justify-between mb-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.45 }}
+              className="flex items-center justify-between mb-4"
+            >
               <div>
-                <h2 className="text-base font-bold text-slate-900">Projets récents</h2>
-                <p className="text-sm text-slate-400">{mockProjects.length} chantiers au total</p>
+                <h2 className="text-base font-bold" style={{ color: '#0D1117', letterSpacing: '-0.02em' }}>
+                  Projets récents
+                </h2>
+                <p className="label-xs mt-0.5" style={{ color: '#9BA3B5' }}>
+                  {projects.length} chantiers au total
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <button className="text-xs font-medium text-slate-500 bg-white border border-slate-200 hover:border-slate-300 px-3 py-1.5 rounded-lg transition-colors">
-                  Tous les statuts
-                </button>
-                <button className="text-xs font-medium text-slate-500 bg-white border border-slate-200 hover:border-slate-300 px-3 py-1.5 rounded-lg transition-colors">
-                  Ce mois
-                </button>
-              </div>
-            </div>
-            <ProjectsTable projects={mockProjects} />
+            </motion.div>
+
+            <ProjectsTable
+              projects={projects}
+              onRename={handleRename}
+              onDelete={handleDelete}
+              onStatusChange={handleStatusChange}
+              filterStatus={filterStatus}
+              onFilterChange={setFilterStatus}
+              showFilters
+            />
           </section>
         </div>
       </div>

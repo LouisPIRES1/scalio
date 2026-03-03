@@ -5,22 +5,20 @@ import { useEffect, type ReactNode } from 'react'
 import { TrendingUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-function AnimatedNumber({ value, suffix }: { value: number; suffix?: string }) {
+function AnimatedNumber({ value }: { value: number }) {
   const count = useMotionValue(0)
   const rounded = useTransform(count, (v) => Math.round(v).toLocaleString('fr-FR'))
 
   useEffect(() => {
     const controls = animate(count, value, {
-      duration: 1.4,
-      ease: 'easeOut',
-      delay: 0.2,
+      duration: 1.6,
+      ease: [0.16, 1, 0.3, 1],
+      delay: 0.3,
     })
     return controls.stop
   }, [value, count])
 
-  return (
-    <motion.span>{rounded}</motion.span>
-  )
+  return <motion.span>{rounded}</motion.span>
 }
 
 interface MetricCardProps {
@@ -35,34 +33,10 @@ interface MetricCardProps {
 }
 
 const colorMap = {
-  blue: {
-    bg: 'bg-blue-50',
-    iconBg: 'bg-blue-600',
-    text: 'text-blue-700',
-    badge: 'bg-blue-100 text-blue-700',
-    glow: 'shadow-blue-100',
-  },
-  emerald: {
-    bg: 'bg-emerald-50',
-    iconBg: 'bg-emerald-600',
-    text: 'text-emerald-700',
-    badge: 'bg-emerald-100 text-emerald-700',
-    glow: 'shadow-emerald-100',
-  },
-  amber: {
-    bg: 'bg-amber-50',
-    iconBg: 'bg-amber-600',
-    text: 'text-amber-700',
-    badge: 'bg-amber-100 text-amber-700',
-    glow: 'shadow-amber-100',
-  },
-  violet: {
-    bg: 'bg-violet-50',
-    iconBg: 'bg-violet-600',
-    text: 'text-violet-700',
-    badge: 'bg-violet-100 text-violet-700',
-    glow: 'shadow-violet-100',
-  },
+  blue:    { accent: '#1D4ED8', light: '#EEF2FF', text: '#1D4ED8', border: '#BFDBFE' },
+  emerald: { accent: '#059669', light: '#ECFDF5', text: '#047857', border: '#A7F3D0' },
+  amber:   { accent: '#D97706', light: '#FFFBEB', text: '#B45309', border: '#FDE68A' },
+  violet:  { accent: '#7C3AED', light: '#F5F3FF', text: '#6D28D9', border: '#DDD6FE' },
 }
 
 export function MetricCard({ title, value, suffix, prefix, description, icon, trend, color }: MetricCardProps) {
@@ -70,42 +44,62 @@ export function MetricCard({ title, value, suffix, prefix, description, icon, tr
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      whileHover={{ y: -2, transition: { duration: 0.15 } }}
-      className="relative overflow-hidden rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow p-5"
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={{ y: -3, transition: { duration: 0.2 } }}
+      className="relative overflow-hidden rounded-2xl p-5 cursor-default"
+      style={{
+        background: '#FDFAF4',
+        border: `1px solid ${c.border}`,
+        boxShadow: `0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04)`,
+      }}
     >
       {/* Top row */}
-      <div className="flex items-start justify-between mb-4">
-        <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg shadow-sm', c.iconBg)}>
-          <div className="text-white [&>svg]:h-5 [&>svg]:w-5">{icon}</div>
+      <div className="flex items-start justify-between mb-5">
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-xl"
+          style={{ background: c.light, color: c.accent }}
+        >
+          <div className="[&>svg]:h-5 [&>svg]:w-5">{icon}</div>
         </div>
         {trend !== undefined && (
-          <div className={cn('flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold', c.badge)}>
+          <div
+            className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
+            style={{ background: c.light, color: c.text }}
+          >
             <TrendingUp className="h-3 w-3" />
             +{trend}%
           </div>
         )}
       </div>
 
-      {/* Value */}
-      <div className="mb-1">
-        <span className="text-2xl font-bold text-slate-900 tabular-nums">
-          {prefix && <span className="text-lg mr-0.5">{prefix}</span>}
+      {/* Value — DM Mono for precision feel */}
+      <div className="mb-1.5">
+        <span className="font-data text-3xl font-medium" style={{ color: '#1A1714', letterSpacing: '-0.04em' }}>
+          {prefix && <span className="text-xl mr-0.5 opacity-60">{prefix}</span>}
           <AnimatedNumber value={value} />
-          {suffix && <span className="text-lg text-slate-500 ml-1 font-medium">{suffix}</span>}
+          {suffix && (
+            <span className="text-xl ml-1 font-normal" style={{ color: c.accent }}>
+              {suffix}
+            </span>
+          )}
         </span>
       </div>
 
       {/* Title */}
-      <p className="text-sm font-medium text-slate-600">{title}</p>
+      <p className="text-sm font-semibold" style={{ color: '#57534E', letterSpacing: '0' }}>
+        {title}
+      </p>
       {description && (
-        <p className="text-xs text-slate-400 mt-0.5">{description}</p>
+        <p className="label-xs mt-1" style={{ color: '#9BA3B5' }}>{description}</p>
       )}
 
-      {/* Decorative corner */}
-      <div className={cn('absolute -right-3 -top-3 h-16 w-16 rounded-full opacity-6', c.bg)} />
+      {/* Accent line bottom */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-0.5 rounded-b-2xl"
+        style={{ background: `linear-gradient(90deg, ${c.accent}40, ${c.accent}80, ${c.accent}40)` }}
+      />
     </motion.div>
   )
 }

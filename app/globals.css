@@ -7,8 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-mono);
+  --font-sans: var(--font-syne);
+  --font-mono: var(--font-dm-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -45,74 +45,86 @@
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: #F8FAFC;
-  --foreground: #0F172A;
+  --radius: 0.625rem;
+
+  --background: #F5F7FA;
+  --foreground: #0D1117;
   --card: #FFFFFF;
-  --card-foreground: #0F172A;
+  --card-foreground: #0D1117;
   --popover: #FFFFFF;
-  --popover-foreground: #0F172A;
-  --primary: #1E40AF;
+  --popover-foreground: #0D1117;
+  --primary: #2F54EB;
   --primary-foreground: #FFFFFF;
-  --secondary: #F1F5F9;
-  --secondary-foreground: #334155;
-  --muted: #F1F5F9;
-  --muted-foreground: #64748B;
-  --accent: #EFF6FF;
-  --accent-foreground: #1E40AF;
-  --destructive: #EF4444;
-  --border: #E2E8F0;
-  --input: #E2E8F0;
-  --ring: #3B82F6;
-  --chart-1: #3B82F6;
+  --secondary: #EEF2FF;
+  --secondary-foreground: #3730A3;
+  --muted: #F1F3F8;
+  --muted-foreground: #6B7280;
+  --accent: #EEF2FF;
+  --accent-foreground: #2F54EB;
+  --destructive: #E53E3E;
+  --border: #E8ECF2;
+  --input: #E8ECF2;
+  --ring: #2F54EB;
+
+  --chart-1: #2F54EB;
   --chart-2: #10B981;
   --chart-3: #F59E0B;
   --chart-4: #8B5CF6;
   --chart-5: #EF4444;
-  --sidebar: #0F172A;
-  --sidebar-foreground: #F8FAFC;
-  --sidebar-primary: #3B82F6;
+
+  --sidebar: #131929;
+  --sidebar-foreground: #F0F4FF;
+  --sidebar-primary: #4B6EFF;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: rgba(255,255,255,0.08);
+  --sidebar-accent: rgba(255,255,255,0.06);
   --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: rgba(255,255,255,0.06);
-  --sidebar-ring: #3B82F6;
+  --sidebar-border: rgba(255,255,255,0.05);
+  --sidebar-ring: #4B6EFF;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    @apply bg-background text-foreground;
+    font-family: var(--font-syne), sans-serif;
+    letter-spacing: -0.01em;
   }
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+/* ── Monospace data ─────────────────────────────────────────────────── */
+.font-data {
+  font-family: var(--font-dm-mono), monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
 }
 
-/* Custom animations */
+/* ── Micro label ────────────────────────────────────────────────────── */
+.label-xs {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D1D5E0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9BA3B5; }
+
+/* ── Shimmer ────────────────────────────────────────────────────────── */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
 }
-
 .shimmer {
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background: linear-gradient(90deg, #F1F3F8 25%, #E8ECF2 50%, #F1F3F8 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
