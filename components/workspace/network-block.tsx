@@ -89,20 +89,18 @@ function LineItem({
         </div>
       ) : (
         <>
-          {/* Value — primary data, DM Mono */}
+          {/* Value — fixed width, right-aligned */}
           <span className={cn(
-            'font-data text-sm font-normal tabular-nums shrink-0',
+            'font-data text-sm font-normal tabular-nums w-20 text-right shrink-0',
             item.isEdited ? 'text-blue-600' : 'text-slate-600'
           )}>
             {item.quantity.toFixed(1)} {item.unit}
           </span>
 
-          {/* Elbows */}
-          {item.elbows !== undefined && item.elbows > 0 && (
-            <span className="font-data text-sm font-normal tabular-nums text-slate-600 shrink-0">
-              · {item.elbows}c
-            </span>
-          )}
+          {/* Elbows — fixed width, right-aligned */}
+          <span className="font-data text-sm font-normal tabular-nums text-slate-500 w-8 text-right shrink-0">
+            {item.elbows !== undefined && item.elbows > 0 ? `${item.elbows}c` : ''}
+          </span>
 
           {/* "Edited" badge */}
           {item.isEdited && (
