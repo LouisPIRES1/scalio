@@ -33,10 +33,10 @@ interface MetricCardProps {
 }
 
 const colorMap = {
-  blue:    { accent: '#1D4ED8', light: '#EEF2FF', text: '#1D4ED8', border: '#BFDBFE' },
+  blue:    { accent: '#203957', light: '#E8F0F4', text: '#203957', border: '#B8CDD8' },
   emerald: { accent: '#059669', light: '#ECFDF5', text: '#047857', border: '#A7F3D0' },
   amber:   { accent: '#D97706', light: '#FFFBEB', text: '#B45309', border: '#FDE68A' },
-  violet:  { accent: '#7C3AED', light: '#F5F3FF', text: '#6D28D9', border: '#DDD6FE' },
+  violet:  { accent: '#4A7A93', light: '#EBF3F7', text: '#3D7A93', border: '#ACCAD8' },
 }
 
 export function MetricCard({ title, value, suffix, prefix, description, icon, trend, color }: MetricCardProps) {

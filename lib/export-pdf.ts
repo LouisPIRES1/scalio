@@ -194,7 +194,7 @@ export function exportMetrePdf(
 <body>
   <div class="header">
     <div>
-      <div class="logo">Scalio</div>
+      <div class="logo">Constor</div>
       <div class="title">Fiche de métré</div>
       <div class="subtitle">${project.name} — Plan ${plan.name}</div>
     </div>
@@ -220,7 +220,7 @@ export function exportMetrePdf(
   </div>` : ''}
 
   <div class="footer">
-    <span>Document généré par Scalio · Usage interne</span>
+    <span>Document généré par Constor · Usage interne</span>
     <span>${date}</span>
   </div>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Plus, ScanLine, Clock, Ruler, FolderOpen } from 'lucide-react'
@@ -8,25 +8,13 @@ import { AppShell } from '@/components/layout/app-shell'
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { ProjectsTable } from '@/components/dashboard/projects-table'
 import { Button } from '@/components/ui/button'
-import { mockMetrics, mockProjects } from '@/lib/mock-data'
-import type { Project } from '@/types'
+import { mockMetrics } from '@/lib/mock-data'
+import { useAppContext } from '@/lib/app-context'
 import type { StatusFilter } from '@/components/dashboard/projects-table'
 
 export default function DashboardPage() {
-  const [projects, setProjects] = useState<Project[]>(mockProjects)
+  const { projects, renameProject, deleteProject, changeProjectStatus } = useAppContext()
   const [filterStatus, setFilterStatus] = useState<StatusFilter>('all')
-
-  const handleRename = useCallback((id: string, newName: string) => {
-    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name: newName } : p)))
-  }, [])
-
-  const handleDelete = useCallback((id: string) => {
-    setProjects((prev) => prev.filter((p) => p.id !== id))
-  }, [])
-
-  const handleStatusChange = useCallback((id: string, status: Project['status']) => {
-    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)))
-  }, [])
 
   const date = new Intl.DateTimeFormat('fr-FR', {
     weekday: 'long',
@@ -56,11 +44,7 @@ export default function DashboardPage() {
             </div>
             <Link href="/analyse">
               <Button
-                className="gap-2 text-white font-semibold text-sm px-4 py-2 h-9 rounded-xl shadow-md transition-all"
-                style={{
-                  background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
-                  boxShadow: '0 4px 12px rgba(29,78,216,0.3)',
-                }}
+                className="gap-2 text-white font-semibold text-sm px-4 py-2 h-9 rounded-xl shadow-md transition-all btn-brand"
               >
                 <Plus className="h-4 w-4" />
                 Nouvelle analyse
@@ -94,8 +78,8 @@ export default function DashboardPage() {
             transition={{ delay: 0.35, duration: 0.5 }}
             className="relative overflow-hidden rounded-2xl p-6"
             style={{
-              background: 'linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 60%, #2563EB 100%)',
-              boxShadow: '0 8px 32px rgba(29,78,216,0.25)',
+              background: 'linear-gradient(135deg, #203957 0%, #2D4F6A 40%, #4A7A93 100%)',
+              boxShadow: '0 8px 32px rgba(32,57,87,0.30)',
             }}
           >
             {/* Decorative light line */}
@@ -154,9 +138,9 @@ export default function DashboardPage() {
 
             <ProjectsTable
               projects={projects}
-              onRename={handleRename}
-              onDelete={handleDelete}
-              onStatusChange={handleStatusChange}
+              onRename={renameProject}
+              onDelete={deleteProject}
+              onStatusChange={changeProjectStatus}
               filterStatus={filterStatus}
               onFilterChange={setFilterStatus}
               showFilters

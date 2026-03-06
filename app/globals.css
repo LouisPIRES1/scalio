@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-syne);
+  --font-sans: var(--font-jakarta);
   --font-mono: var(--font-dm-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -44,42 +44,54 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ── Constor brand tokens ───────────────────────────────────────── */
 :root {
+  /* Brand colours — extracted from logo gradient */
+  --brand-navy:       #203957;  /* logo left  */
+  --brand-navy-dark:  #152840;
+  --brand-navy-mid:   #2D4F6A;
+  --brand-teal:       #689AAF;  /* logo right */
+  --brand-teal-mid:   #4A7A93;
+  --brand-teal-light: #88B5C8;
+  --brand-teal-pale:  #D4ECED;
+  --brand-teal-ghost: #EBF3F7;
+
+  /* Semantic */
   --radius: 0.625rem;
-
-  --background: #F5F7FA;
-  --foreground: #0D1117;
+  --background: #EEF3F6;
+  --foreground: #152840;
   --card: #FFFFFF;
-  --card-foreground: #0D1117;
+  --card-foreground: #152840;
   --popover: #FFFFFF;
-  --popover-foreground: #0D1117;
-  --primary: #2F54EB;
+  --popover-foreground: #152840;
+  --primary: #203957;
   --primary-foreground: #FFFFFF;
-  --secondary: #EEF2FF;
-  --secondary-foreground: #3730A3;
-  --muted: #F1F3F8;
-  --muted-foreground: #6B7280;
-  --accent: #EEF2FF;
-  --accent-foreground: #2F54EB;
-  --destructive: #E53E3E;
-  --border: #E8ECF2;
-  --input: #E8ECF2;
-  --ring: #2F54EB;
+  --secondary: #EBF3F7;
+  --secondary-foreground: #203957;
+  --muted: #E8F0F5;
+  --muted-foreground: #6A8A98;
+  --accent: #EBF3F7;
+  --accent-foreground: #203957;
+  --destructive: #DC2626;
+  --border: #C8DCEA;
+  --input: #C8DCEA;
+  --ring: #689AAF;
 
-  --chart-1: #2F54EB;
-  --chart-2: #10B981;
-  --chart-3: #F59E0B;
-  --chart-4: #8B5CF6;
+  --chart-1: #203957;
+  --chart-2: #689AAF;
+  --chart-3: #10B981;
+  --chart-4: #F59E0B;
   --chart-5: #EF4444;
 
-  --sidebar: #131929;
-  --sidebar-foreground: #F0F4FF;
-  --sidebar-primary: #4B6EFF;
+  /* Sidebar — deep navy matching logo */
+  --sidebar: #203957;
+  --sidebar-foreground: #E8F0F2;
+  --sidebar-primary: #689AAF;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: rgba(255,255,255,0.06);
+  --sidebar-accent: rgba(104,154,175,0.12);
   --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: rgba(255,255,255,0.05);
-  --sidebar-ring: #4B6EFF;
+  --sidebar-border: rgba(255,255,255,0.06);
+  --sidebar-ring: #689AAF;
 }
 
 @layer base {
@@ -92,7 +104,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-syne), sans-serif;
+    font-family: var(--font-jakarta), sans-serif;
     letter-spacing: -0.01em;
   }
 }
@@ -112,11 +124,56 @@
   text-transform: uppercase;
 }
 
+/* ── Brand gradient CTA ─────────────────────────────────────────────── */
+.btn-brand {
+  background: linear-gradient(135deg, #203957 0%, #4A7A93 100%);
+  box-shadow: 0 4px 14px rgba(32, 57, 87, 0.35);
+  transition: box-shadow 0.2s, filter 0.2s;
+}
+.btn-brand:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 20px rgba(32, 57, 87, 0.45);
+}
+
+/* ── Avatar initials — immune aux extensions navigateur ────────────── */
+.user-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #203957, #689AAF);
+  flex-shrink: 0;
+  position: relative;
+  isolation: isolate;
+}
+.user-avatar::before {
+  content: attr(data-initials);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #203957, #689AAF);
+  z-index: 9999;
+}
+
+/* ── Masquer Notion Web Clipper + autres extensions injectées ───────── */
+#notion-web-clipper-button,
+div[id*="notion"],
+div[class*="notion-clipper"],
+notion-web-clipper,
+div[id*="1password"], div[id*="lastpass"], div[id*="bitwarden"],
+div[id*="dashlane"], div[class*="1password"], div[class*="lastpass"],
+div[class*="bitwarden"], div[class*="dashlane"],
+div[id^="__"] { display: none !important; }
+
 /* ── Scrollbar ──────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #D1D5E0; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #9BA3B5; }
+::-webkit-scrollbar-thumb { background: #B8CDD0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #8AACB0; }
 
 /* ── Shimmer ────────────────────────────────────────────────────────── */
 @keyframes shimmer {
@@ -124,7 +181,7 @@
   100% { background-position:  200% 0; }
 }
 .shimmer {
-  background: linear-gradient(90deg, #F1F3F8 25%, #E8ECF2 50%, #F1F3F8 75%);
+  background: linear-gradient(90deg, #E8F0F5 25%, #C8DCEA 50%, #E8F0F5 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }

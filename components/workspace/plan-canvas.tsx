@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useRef, useState, useCallback, useEffect } from 'react'
-import { ZoomIn, ZoomOut, Maximize2, FileImage } from 'lucide-react'
+import { ZoomIn, ZoomOut, Maximize2, FileImage, Upload } from 'lucide-react'
 import type { NetworkGroup } from '@/types'
 import { NETWORK_META } from '@/types'
+import { savePlanFile } from '@/lib/storage-files'
 
 interface PlanCanvasProps {
   networks: NetworkGroup[]
@@ -12,10 +13,12 @@ interface PlanCanvasProps {
   height: number
   imageUrl?: string
   imageMime?: string
+  onUpload?: (url: string, mime: string) => void
+  planId?: string
 }
 
 // ── PDF rendering (pdfjs-dist) ───────────────────────────────────────────────
-async function renderPdf(url: string): Promise<{ dataUrl: string; w: number; h: number }> {
+async function renderPdf(url: string, containerWidth: number): Promise<{ dataUrl: string; w: number; h: number }> {
   const pdfjs = await import('pdfjs-dist')
   pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
@@ -23,8 +26,10 @@ async function renderPdf(url: string): Promise<{ dataUrl: string; w: number; h: 
   const page = await pdf.getPage(1)
   const naturalViewport = page.getViewport({ scale: 1 })
 
-  // Render at high resolution: target ≥ 3 000px wide for quality
-  const targetW = Math.max(3000, naturalViewport.width * 4)
+  // Render at container-relative resolution: 4× the visible width (good for ~4× zoom)
+  // Capped at 6000px to avoid huge canvases that degrade CSS-transform quality at fit-view
+  const dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 2)
+  const targetW = Math.min(6000, Math.max(containerWidth * dpr * 4, 2000))
   const scale = targetW / naturalViewport.width
   const viewport = page.getViewport({ scale })
 
@@ -44,6 +49,66 @@ async function renderPdf(url: string): Promise<{ dataUrl: string; w: number; h: 
   }
 }
 
+// ── Drop zone placeholder ─────────────────────────────────────────────────────
+const ALLOWED = ['application/pdf']
+
+function CanvasDropZone({
+  width, height, onUpload, planId,
+}: { width: number; height: number; onUpload?: (url: string, mime: string) => void; planId?: string }) {
+  const [dragging, setDragging] = useState(false)
+
+  const handleFile = (file: File) => {
+    if (!ALLOWED.includes(file.type)) return
+    const url = URL.createObjectURL(file)
+    // Persist to IndexedDB so it survives browser close
+    if (planId) savePlanFile(planId, file, file.type).catch(console.error)
+    onUpload?.(url, file.type)
+  }
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handleFile(file)
+  }
+
+  return (
+    <div
+      style={{ width, height, background: dragging ? '#EFF6FF' : '#F5F7FC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={onDrop}
+    >
+      <label
+        style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, pointerEvents: onUpload ? 'auto' : 'none' }}
+      >
+        {onUpload && (
+          <input
+            type="file"
+            accept={ALLOWED.join(',')}
+            style={{ display: 'none' }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+          />
+        )}
+        <div style={{
+          width: 56, height: 56, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: dragging ? '#DBEAFE' : '#FFFFFF', border: `2px dashed ${dragging ? '#3B82F6' : '#CBD5E1'}`,
+          transition: 'all 0.15s',
+        }}>
+          <Upload style={{ width: 22, height: 22, color: dragging ? '#3B82F6' : '#94A3B8' }} />
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#475569', margin: 0 }}>
+            {onUpload ? 'Déposez votre plan ici' : 'Aucun plan importé'}
+          </p>
+          <p style={{ fontSize: 12, color: '#94A3B8', margin: '4px 0 0' }}>
+            {onUpload ? 'ou cliquez pour sélectionner · PDF uniquement' : 'Importez un plan depuis « Nouvelle analyse »'}
+          </p>
+        </div>
+      </label>
+    </div>
+  )
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 export function PlanCanvas({
   networks,
@@ -52,6 +117,8 @@ export function PlanCanvas({
   height,
   imageUrl,
   imageMime,
+  onUpload,
+  planId,
 }: PlanCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -98,7 +165,7 @@ export function PlanCanvas({
     setPdfLoading(true)
     setPdfError(false)
 
-    renderPdf(imageUrl)
+    renderPdf(imageUrl, width)
       .then(({ dataUrl, w, h }) => {
         setDisplayUrl(dataUrl)
         setNaturalSize({ w, h })
@@ -196,46 +263,13 @@ export function PlanCanvas({
               width: W,
               height: H,
               pointerEvents: 'none',
-              imageRendering: '-webkit-optimize-contrast' as React.CSSProperties['imageRendering'],
+              imageRendering: 'auto',
             }}
             alt="Plan"
           />
         ) : (
-          /* Placeholder grid (no image uploaded) */
-          <svg
-            width={W}
-            height={H}
-            style={{ display: 'block', background: '#F5F7FC' }}
-          >
-            {Array.from({ length: Math.ceil(W / 40) + 1 }, (_, i) => (
-              <line
-                key={`v${i}`}
-                x1={i * 40} y1={0} x2={i * 40} y2={H}
-                stroke="#DDE3EE" strokeWidth={0.5}
-              />
-            ))}
-            {Array.from({ length: Math.ceil(H / 40) + 1 }, (_, i) => (
-              <line
-                key={`h${i}`}
-                x1={0} y1={i * 40} x2={W} y2={i * 40}
-                stroke="#DDE3EE" strokeWidth={0.5}
-              />
-            ))}
-            <text
-              x={W / 2} y={H / 2 - 20}
-              textAnchor="middle" fill="#94A3B8" fontSize={14}
-              fontFamily="system-ui, sans-serif"
-            >
-              Aucun plan importé
-            </text>
-            <text
-              x={W / 2} y={H / 2 + 10}
-              textAnchor="middle" fill="#CBD5E1" fontSize={11}
-              fontFamily="system-ui, sans-serif"
-            >
-              Importez un plan depuis « Nouvelle analyse »
-            </text>
-          </svg>
+          /* Placeholder — drop zone when onUpload is provided */
+          <CanvasDropZone width={W} height={H} onUpload={onUpload} planId={planId} />
         )}
 
         {/* ── Network SVG overlay ─────────────────────────────────────────── */}

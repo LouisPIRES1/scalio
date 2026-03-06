@@ -16,12 +16,8 @@ export function UploadZone({ onFileSelect, selectedFile, onClear }: UploadZonePr
   const [error, setError] = useState<string | null>(null)
 
   const validateFile = (file: File): boolean => {
-    const allowed = [
-      'application/pdf',
-      'image/png', 'image/jpeg', 'image/tiff', 'image/bmp', 'image/webp',
-    ]
-    if (!allowed.includes(file.type)) {
-      setError('Format non supporté. Déposez un PDF ou une image (PNG, JPG, TIFF…).')
+    if (file.type !== 'application/pdf') {
+      setError('Format non supporté. Déposez un fichier PDF uniquement.')
       return false
     }
     if (file.size > 200 * 1024 * 1024) {
@@ -68,9 +64,9 @@ export function UploadZone({ onFileSelect, selectedFile, onClear }: UploadZonePr
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="flex items-center gap-4 rounded-xl border-2 border-blue-200 bg-blue-50 px-5 py-4"
+        className="flex items-center gap-4 rounded-xl border-2 border-[#ACCAD8] bg-[#EBF3F7] px-5 py-4"
       >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-600 shadow-sm">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg shadow-sm" style={{ background: 'linear-gradient(135deg, #203957 0%, #4A7A93 100%)' }}>
           <File className="h-5 w-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
@@ -96,13 +92,13 @@ export function UploadZone({ onFileSelect, selectedFile, onClear }: UploadZonePr
         className={cn(
           'group relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition-all duration-200',
           isDragging
-            ? 'border-blue-400 bg-blue-50 scale-[1.01]'
-            : 'border-slate-200 bg-slate-50/50 hover:border-blue-300 hover:bg-blue-50/40'
+            ? 'border-[#689AAF] bg-[#EBF3F7] scale-[1.01]'
+            : 'border-slate-200 bg-slate-50/50 hover:border-[#88B5C8] hover:bg-[#EBF3F7]/40'
         )}
       >
         <input
           type="file"
-          accept="application/pdf,image/png,image/jpeg,image/tiff,image/bmp,image/webp"
+          accept="application/pdf"
           className="absolute inset-0 opacity-0 cursor-pointer"
           onChange={handleInputChange}
         />
@@ -111,11 +107,12 @@ export function UploadZone({ onFileSelect, selectedFile, onClear }: UploadZonePr
           animate={isDragging ? { scale: 1.1, rotate: 5 } : { scale: 1, rotate: 0 }}
           transition={{ type: 'spring', stiffness: 400, damping: 20 }}
           className={cn(
-            'mb-4 flex h-14 w-14 items-center justify-center rounded-2xl transition-colors',
-            isDragging ? 'bg-blue-600 shadow-lg shadow-blue-200' : 'bg-white shadow-sm border border-slate-100 group-hover:border-blue-200 group-hover:shadow-blue-100'
+            'mb-4 flex h-14 w-14 items-center justify-center rounded-2xl transition-all',
+            isDragging ? 'shadow-lg' : 'bg-white shadow-sm border border-slate-100 group-hover:border-[#ACCAD8]'
           )}
+          style={isDragging ? { background: 'linear-gradient(135deg, #203957 0%, #4A7A93 100%)' } : undefined}
         >
-          <Upload className={cn('h-6 w-6 transition-colors', isDragging ? 'text-white' : 'text-slate-400 group-hover:text-blue-500')} />
+          <Upload className={cn('h-6 w-6 transition-colors', isDragging ? 'text-white' : 'text-slate-400 group-hover:text-[#689AAF]')} />
         </motion.div>
 
         <AnimatePresence mode="wait">
@@ -139,18 +136,16 @@ export function UploadZone({ onFileSelect, selectedFile, onClear }: UploadZonePr
                 Glissez votre plan PDF ici
               </p>
               <p className="mt-1 text-xs text-slate-400">
-                ou <span className="text-blue-600 font-medium">cliquez pour sélectionner</span> — PDF ou image · jusqu'à 200 Mo
+                ou <span className="font-medium" style={{ color: '#4A7A93' }}>cliquez pour sélectionner</span> — PDF uniquement · jusqu'à 200 Mo
               </p>
             </motion.div>
           )}
         </AnimatePresence>
 
         <div className="mt-4 flex items-center gap-4">
-          {['PDF', 'PNG · JPG', 'TIFF · BMP'].map((tag) => (
-            <span key={tag} className="text-[11px] font-medium text-slate-400 bg-white border border-slate-100 px-2 py-0.5 rounded-full">
-              {tag}
-            </span>
-          ))}
+          <span className="text-[11px] font-medium text-slate-400 bg-white border border-slate-100 px-2 py-0.5 rounded-full">
+            PDF
+          </span>
         </div>
       </label>
 

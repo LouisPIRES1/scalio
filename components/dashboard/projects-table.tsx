@@ -46,8 +46,8 @@ const statusConfig = {
   en_cours: {
     label: 'En cours',
     icon: Circle,
-    className: 'bg-blue-50 text-blue-700 border-blue-200',
-    iconClass: 'text-blue-500',
+    className: 'bg-[#EBF3F7] text-[#3D7A93] border-[#ACCAD8]',
+    iconClass: 'text-[#689AAF]',
   },
   en_attente: {
     label: 'En attente',
@@ -161,12 +161,12 @@ function ProjectRow({ project, index, onRename, onDelete, onStatusChange }: Proj
         exit={{ opacity: 0, x: 8, transition: { duration: 0.2 } }}
         transition={{ delay: index * 0.04, duration: 0.3 }}
         onContextMenu={handleContextMenu}
-        className="group grid grid-cols-[1fr_100px_120px_100px_48px] gap-4 items-center px-6 py-4 hover:bg-[#F5F7FA] transition-colors border-b border-[#E8ECF2]/60 last:border-0 cursor-default"
+        className="group grid grid-cols-[1fr_100px_120px_100px_48px] gap-4 items-center px-6 py-4 hover:bg-[#EEF4F7] transition-colors border-b border-[#C8DCEA]/60 last:border-0 cursor-default"
       >
         {/* Project name */}
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-stone-100 group-hover:bg-blue-50 transition-colors">
-            <Building2 className="h-4 w-4 text-stone-400 group-hover:text-blue-600 transition-colors" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 group-hover:bg-[#EBF3F7] transition-colors">
+            <Building2 className="h-4 w-4 text-slate-400 group-hover:text-[#4A7A93] transition-colors" />
           </div>
           <div className="min-w-0 flex-1">
             {editing ? (
@@ -196,7 +196,7 @@ function ProjectRow({ project, index, onRename, onDelete, onStatusChange }: Proj
               </div>
             ) : (
               <Link href={`/projets/${project.id}`}>
-                <p className="text-sm font-semibold text-[#0D1117] truncate group-hover:text-blue-700 transition-colors">
+                <p className="text-sm font-semibold text-[#152840] truncate group-hover:text-[#203957] transition-colors">
                   {project.name}
                 </p>
                 <p className="text-xs text-stone-400 truncate">{project.client}</p>
@@ -335,8 +335,8 @@ export function ProjectsTable({
               className={cn(
                 'label-xs px-3 py-1.5 rounded-lg border transition-colors whitespace-nowrap',
                 filterStatus === opt.value
-                  ? 'bg-[#2F54EB] text-white border-[#2F54EB] shadow-sm'
-                  : 'text-slate-500 bg-white border-[#E8ECF2] hover:border-slate-300 hover:text-slate-700'
+                  ? 'bg-[#203957] text-white border-[#203957] shadow-sm'
+                  : 'text-[#3A5A70] bg-white border-[#C8DCEA] hover:border-[#689AAF] hover:text-[#203957]'
               )}
             >
               {opt.label}
@@ -345,9 +345,9 @@ export function ProjectsTable({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border bg-white" style={{ borderColor: '#E8ECF2', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04)' }}>
+      <div className="overflow-hidden rounded-2xl border bg-white" style={{ borderColor: '#C8DCEA', boxShadow: '0 1px 3px rgba(32,57,87,0.04), 0 8px 24px rgba(32,57,87,0.05)' }}>
         {/* Header */}
-        <div className="grid grid-cols-[1fr_100px_120px_100px_48px] gap-4 border-b px-6 py-3" style={{ borderColor: '#E8ECF2' }}>
+        <div className="grid grid-cols-[1fr_100px_120px_100px_48px] gap-4 border-b px-6 py-3" style={{ borderColor: '#C8DCEA' }}>
           <span className="label-xs text-slate-400">Projet</span>
           <span className="label-xs text-slate-400">Plans</span>
           <span className="label-xs text-slate-400">Linéaires</span>

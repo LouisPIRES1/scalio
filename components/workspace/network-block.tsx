@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Trash2, Edit3, Check, X, AlertCircle } from 'lucide-react'
+import { ChevronDown, Trash2, Edit3, Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { NetworkGroup, NetworkLineItem } from '@/types'
 import { NETWORK_META } from '@/types'
@@ -14,22 +14,11 @@ import { NETWORK_META } from '@/types'
 interface NetworkBlockProps {
   network: NetworkGroup
   onRemove: () => void
-  onUpdateItem: (itemId: string, quantity: number) => void
+  onUpdateItem: (itemId: string, quantity: number, elbows: number) => void
   onDeleteItem: (itemId: string) => void
   isReadOnly?: boolean
 }
 
-function ConfidenceDot({ value }: { value: number }) {
-  const pct = Math.round(value * 100)
-  const color    = pct >= 90 ? 'bg-emerald-500' : pct >= 75 ? 'bg-amber-400' : 'bg-red-400'
-  const textColor = pct >= 90 ? 'text-emerald-700' : pct >= 75 ? 'text-amber-700' : 'text-red-600'
-  return (
-    <span className={cn('flex items-center gap-1 text-xs font-medium', textColor)}>
-      <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', color)} />
-      {pct}%
-    </span>
-  )
-}
 
 function LineItem({
   item,
@@ -40,18 +29,22 @@ function LineItem({
 }: {
   item: NetworkLineItem
   networkColor: string
-  onUpdate: (q: number) => void
+  onUpdate: (q: number, elbows: number) => void
   onDelete: () => void
   isReadOnly?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(String(item.quantity))
+  const [draftElbows, setDraftElbows] = useState(String(item.elbows ?? 0))
 
   const handleSave = () => {
     const val = parseFloat(draft)
-    if (!isNaN(val) && val >= 0) onUpdate(val)
+    const elb = parseInt(draftElbows, 10)
+    if (!isNaN(val) && val >= 0) onUpdate(val, isNaN(elb) || elb < 0 ? 0 : elb)
     setEditing(false)
   }
+
+  const hasElbows = item.elbows !== undefined
 
   return (
     <div className="group flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-slate-50 transition-colors">
@@ -69,6 +62,7 @@ function LineItem({
       {/* Editing mode */}
       {editing ? (
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* Quantity input */}
           <input
             autoFocus
             value={draft}
@@ -80,6 +74,24 @@ function LineItem({
             className="w-16 font-data text-sm font-medium text-slate-900 border border-blue-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-right"
           />
           <span className="text-xs text-slate-400">{item.unit}</span>
+
+          {/* Elbows input — only for items that have elbows */}
+          {hasElbows && (
+            <>
+              <span className="text-xs text-slate-300">·</span>
+              <input
+                value={draftElbows}
+                onChange={(e) => setDraftElbows(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSave()
+                  if (e.key === 'Escape') setEditing(false)
+                }}
+                className="w-10 font-data text-sm font-medium text-slate-900 border border-blue-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-right"
+              />
+              <span className="text-xs text-slate-400">c</span>
+            </>
+          )}
+
           <button onClick={handleSave} className="text-emerald-600 hover:text-emerald-700">
             <Check className="h-3.5 w-3.5" />
           </button>
@@ -101,13 +113,6 @@ function LineItem({
           <span className="font-data text-sm font-normal tabular-nums text-slate-500 w-8 text-right shrink-0">
             {item.elbows !== undefined && item.elbows > 0 ? `${item.elbows}c` : ''}
           </span>
-
-          {/* "Edited" badge */}
-          {item.isEdited && (
-            <span className="text-xs font-medium text-blue-500 bg-blue-50 border border-blue-100 px-1.5 py-px rounded shrink-0">
-              édité
-            </span>
-          )}
 
           {/* Actions on hover */}
           {!isReadOnly && (
@@ -188,8 +193,6 @@ export function NetworkBlock({
           )}
         </div>
 
-        <ConfidenceDot value={network.confidence} />
-
         {!isReadOnly && (
           <button
             onClick={(e) => { e.stopPropagation(); onRemove() }}
@@ -220,21 +223,12 @@ export function NetworkBlock({
                   key={item.id}
                   item={item}
                   networkColor={meta.color}
-                  onUpdate={(q) => onUpdateItem(item.id, q)}
+                  onUpdate={(q, elbows) => onUpdateItem(item.id, q, elbows)}
                   onDelete={() => onDeleteItem(item.id)}
                   isReadOnly={isReadOnly}
                 />
               ))}
 
-              {/* Low confidence warning */}
-              {network.confidence < 0.8 && (
-                <div className="mx-3 mb-2 mt-1 flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-100 px-2.5 py-2">
-                  <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-px" />
-                  <p className="text-xs text-amber-700 font-medium">
-                    Fiabilité réduite — vérification recommandée
-                  </p>
-                </div>
-              )}
             </div>
           </motion.div>
         )}

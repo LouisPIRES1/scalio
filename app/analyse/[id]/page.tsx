@@ -8,38 +8,83 @@ import { PlanCanvas } from '@/components/workspace/plan-canvas'
 import { ReportPanel } from '@/components/workspace/report-panel'
 import { Button } from '@/components/ui/button'
 import { mockNetworkGroups, mockPlans, mockProjects } from '@/lib/mock-data'
+import { useAppContext } from '@/lib/app-context'
+import { loadPlanFile } from '@/lib/storage-files'
 import { exportMetrePdf } from '@/lib/export-pdf'
-import type { NetworkGroup } from '@/types'
+import { savePlanVisit } from '@/lib/history'
+import type { NetworkGroup, Plan, Project } from '@/types'
 
 export default function WorkspacePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const plan = mockPlans.find((p) => p.id === id)
-  const project = plan ? mockProjects.find((p) => p.id === plan.projectId) : null
+  const { plans: allPlans, projects } = useAppContext()
 
-  const isAnalysed = plan?.status === 'termine'
+  // Try mock data first (SSR-safe), then context on client
+  const mockPlan = mockPlans.find((p) => p.id === id)
+  const mockProject = mockPlan ? mockProjects.find((p) => p.id === mockPlan.projectId) : null
 
-  const initialNetworks: NetworkGroup[] = (
-    plan?.networkGroups?.length ? plan.networkGroups : mockNetworkGroups
-  ).map((n) => ({
-    ...n,
-    // Auto-select all networks for completed plans
-    isSelected: isAnalysed ? true : n.isSelected,
-  }))
+  const [plan, setPlan] = useState<Plan | null>(mockPlan ?? null)
+  const [project, setProject] = useState<Project | null>(mockProject ?? null)
 
-  const [networks, setNetworks] = useState<NetworkGroup[]>(initialNetworks)
-  const [isReadOnly, setIsReadOnly] = useState(isAnalysed)
+  const [networks, setNetworks] = useState<NetworkGroup[]>(() => {
+    const p = mockPlan
+    const analysed = p?.status === 'termine'
+    return (p?.networkGroups?.length ? p.networkGroups : mockNetworkGroups).map((n) => ({
+      ...n,
+      isSelected: analysed ? true : n.isSelected,
+    }))
+  })
+  const [isReadOnly, setIsReadOnly] = useState(mockPlan?.status === 'termine' || false)
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 })
   const [imageUrl, setImageUrl] = useState<string | undefined>()
   const [imageMime, setImageMime] = useState<string | undefined>()
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Read uploaded plan from sessionStorage (client-side only)
+  // Load plan/project from context if not a mock plan
   useEffect(() => {
-    const url = sessionStorage.getItem('scalio_plan_url') ?? undefined
-    const mime = sessionStorage.getItem('scalio_plan_mime') ?? undefined
-    setImageUrl(url)
-    setImageMime(mime)
-  }, [])
+    if (mockPlan) return
+    const storedPlan = allPlans.find((p) => p.id === id)
+    if (!storedPlan) return
+    setPlan(storedPlan)
+    const storedProject = projects.find((p) => p.id === storedPlan.projectId)
+    setProject(storedProject ?? null)
+    const analysed = storedPlan.status === 'termine'
+    setNetworks(
+      (storedPlan.networkGroups?.length ? storedPlan.networkGroups : mockNetworkGroups).map((n) => ({
+        ...n,
+        isSelected: analysed ? true : n.isSelected,
+      }))
+    )
+    setIsReadOnly(analysed)
+  }, [id, mockPlan, allPlans, projects])
+
+  // Save to history when plan + project are known
+  useEffect(() => {
+    if (!plan || !project) return
+    savePlanVisit({
+      planId: plan.id,
+      planName: plan.name,
+      floor: plan.floor,
+      projectId: project.id,
+      projectName: project.name,
+      visitedAt: new Date().toISOString(),
+      status: plan.status,
+    })
+  }, [plan, project])
+
+  // Load plan file from IndexedDB (persists across sessions)
+  useEffect(() => {
+    let blobUrl: string | null = null
+    loadPlanFile(id).then((result) => {
+      if (result) {
+        blobUrl = result.url
+        setImageUrl(result.url)
+        setImageMime(result.mime)
+      }
+    })
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl)
+    }
+  }, [id])
 
   useEffect(() => {
     const measure = () => {
@@ -68,7 +113,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [])
 
   const handleUpdateItem = useCallback(
-    (networkId: string, itemId: string, quantity: number) => {
+    (networkId: string, itemId: string, quantity: number, elbows: number) => {
       setNetworks((prev) =>
         prev.map((n) =>
           n.id === networkId
@@ -79,6 +124,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                     ? {
                         ...item,
                         quantity,
+                        elbows: item.elbows !== undefined ? elbows : item.elbows,
                         isEdited: true,
                         originalQuantity: item.originalQuantity ?? item.quantity,
                       }
@@ -102,15 +148,20 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     )
   }, [])
 
+  const handleUpload = useCallback((url: string, mime: string) => {
+    setImageUrl((prev) => {
+      if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev)
+      return url
+    })
+    setImageMime(mime)
+  }, [])
+
   const handleExportPdf = useCallback(() => {
     if (!plan || !project) return
     exportMetrePdf(networks, plan, project)
   }, [networks, plan, project])
 
   const selectedCount = networks.filter((n) => n.isSelected).length
-  const avgConfidence = networks.length > 0
-    ? Math.round(networks.reduce((s, n) => s + n.confidence, 0) / networks.length * 100)
-    : 0
 
   const backHref = project ? `/projets/${project.id}` : '/projets'
   const planLabel = plan ? `${plan.floor} — ${plan.name}` : 'Plan'
@@ -148,7 +199,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                 <Button
                   onClick={() => setIsReadOnly(false)}
                   variant="outline"
-                  className="gap-2 border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-700 font-semibold text-sm h-8 px-4 rounded-lg"
+                  className="gap-2 border-[#C8DCEA] text-[#203957] hover:border-[#689AAF] hover:text-[#4A7A93] font-semibold text-sm h-8 px-4 rounded-lg"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                   Modifier
@@ -164,18 +215,13 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                   </span>
                 </div>
 
-                {/* Confidence */}
-                <div className="flex items-center gap-1.5 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-1.5">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                  <span className="text-xs font-semibold text-emerald-700">Fiabilité {avgConfidence}%</span>
-                </div>
               </>
             )}
 
             <Button
               onClick={handleExportPdf}
               disabled={selectedCount === 0}
-              className="gap-2 bg-[#0F172A] hover:bg-slate-800 text-white font-semibold text-sm h-8 px-4 rounded-lg shadow-sm disabled:opacity-40"
+              className="gap-2 text-white font-semibold text-sm h-8 px-4 rounded-lg shadow-sm disabled:opacity-40 btn-brand"
             >
               <FileDown className="h-4 w-4" />
               Exporter PDF
@@ -193,6 +239,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               height={canvasSize.height}
               imageUrl={imageUrl}
               imageMime={imageMime}
+              onUpload={handleUpload}
+              planId={id}
             />
           </div>
 

@@ -19,7 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 interface ReportPanelProps {
   networks: NetworkGroup[]
   onRemoveNetwork: (id: string) => void
-  onUpdateItem: (networkId: string, itemId: string, quantity: number) => void
+  onUpdateItem: (networkId: string, itemId: string, quantity: number, elbows: number) => void
   onDeleteItem: (networkId: string, itemId: string) => void
   onExport: () => void
   isReadOnly?: boolean
@@ -123,8 +123,8 @@ export function ReportPanel({
                     key={network.id}
                     network={network}
                     onRemove={() => onRemoveNetwork(network.id)}
-                    onUpdateItem={(itemId, quantity) =>
-                      onUpdateItem(network.id, itemId, quantity)
+                    onUpdateItem={(itemId, quantity, elbows) =>
+                      onUpdateItem(network.id, itemId, quantity, elbows)
                     }
                     onDeleteItem={(itemId) => onDeleteItem(network.id, itemId)}
                     isReadOnly={isReadOnly}

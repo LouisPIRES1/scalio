@@ -2,13 +2,15 @@
 
 import { use, useMemo, useState, useCallback, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, FileText, Ruler, CheckCircle2, Circle, AlertCircle,
-  Plus, ChevronRight, Building2, Trash2, Hash, ChevronDown,
+  Plus, ChevronRight, Building2, Trash2, Hash, ChevronDown, ScanSearch,
+  Pencil, Check, X,
 } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
-import { mockProjects, mockPlans } from '@/lib/mock-data'
+import { useAppContext } from '@/lib/app-context'
 import { cn } from '@/lib/utils'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -20,13 +22,13 @@ import type { Plan } from '@/types'
 
 const STATUS_CONFIG = {
   termine:   { label: 'Analysé',    icon: CheckCircle2, cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', iconCls: 'text-emerald-500' },
-  en_cours:  { label: 'En cours',   icon: Circle,       cls: 'bg-blue-50 text-blue-700 border-blue-200',         iconCls: 'text-blue-500'    },
+  en_cours:  { label: 'En cours',   icon: Circle,       cls: 'bg-[#EBF3F7] text-[#3D7A93] border-[#ACCAD8]',   iconCls: 'text-[#689AAF]'  },
   en_attente:{ label: 'En attente', icon: AlertCircle,  cls: 'bg-slate-50 text-slate-500 border-slate-200',      iconCls: 'text-slate-400'   },
 }
 
 const PROJECT_STATUS = {
   termine:    { label: 'Terminé',    cls: 'bg-emerald-50 text-emerald-700' },
-  en_cours:   { label: 'En cours',   cls: 'bg-blue-50 text-blue-700'       },
+  en_cours:   { label: 'En cours',   cls: 'bg-[#EBF3F7] text-[#3D7A93]'   },
   en_attente: { label: 'En attente', cls: 'bg-amber-50 text-amber-700'     },
 }
 
@@ -83,11 +85,11 @@ function PlanCard({
       </button>
 
       <Link href={`/analyse/${plan.id}`}>
-        <div className="flex flex-col gap-3 rounded-xl border bg-white p-4 transition-all border-slate-200 hover:border-blue-300 hover:shadow-md hover:shadow-blue-50 cursor-pointer">
+        <div className="flex flex-col gap-3 rounded-xl border bg-white p-4 transition-all border-slate-200 hover:border-[#88B5C8] hover:shadow-md hover:shadow-[#EBF3F7] cursor-pointer">
           {/* Icon + arrow */}
           <div className="flex items-start justify-between">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 group-hover:bg-blue-50 transition-colors">
-              <FileText className="h-4 w-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 group-hover:bg-[#EBF3F7] transition-colors">
+              <FileText className="h-4 w-4 text-slate-400 group-hover:text-[#4A7A93] transition-colors" />
             </div>
             <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-blue-500 transition-colors mt-0.5" />
           </div>
@@ -96,7 +98,7 @@ function PlanCard({
           <div>
             <div className="flex items-center gap-1 mb-0.5">
               <Hash className="h-3 w-3 text-slate-300 shrink-0" />
-              <p className="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors truncate">
+              <p className="text-sm font-bold text-slate-900 group-hover:text-[#203957] transition-colors truncate">
                 {plan.name}
               </p>
             </div>
@@ -248,9 +250,9 @@ function AddPlanDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md rounded-2xl border-0 shadow-2xl p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-md rounded-2xl border-0 shadow-2xl p-0">
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-slate-100">
+        <div className="px-6 pt-6 pb-4 border-b border-slate-100 rounded-t-2xl bg-white">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 mb-3">
             <Plus className="h-5 w-5 text-blue-600" />
           </div>
@@ -272,7 +274,7 @@ function AddPlanDialog({
               <button
                 type="button"
                 onClick={() => setFloorOpen((v) => !v)}
-                className="w-full flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 hover:border-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="w-full flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 hover:border-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-[#689AAF]/30"
               >
                 {floor}
                 <ChevronDown className={cn('h-4 w-4 text-slate-400 transition-transform', floorOpen && 'rotate-180')} />
@@ -295,7 +297,7 @@ function AddPlanDialog({
                           className={cn(
                             'w-full flex items-center rounded-lg px-3 py-2 text-sm text-left transition-colors',
                             opt.label === floor
-                              ? 'bg-blue-50 text-blue-700 font-semibold'
+                              ? 'bg-[#EBF3F7] text-[#3D7A93] font-semibold'
                               : 'text-slate-700 hover:bg-slate-50'
                           )}
                         >
@@ -323,7 +325,7 @@ function AddPlanDialog({
               onChange={(e) => setPlanNumber(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit() }}
               placeholder="ex : EXE-15, A-03, 3/12…"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-900 placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-900 placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#689AAF]/30 focus:border-[#689AAF] transition-colors"
             />
             <p className="text-[11px] text-slate-400">
               C&apos;est le numéro que vous utilisez pour identifier ce plan sur chantier.
@@ -343,7 +345,7 @@ function AddPlanDialog({
           <Button
             disabled={!planNumber.trim()}
             onClick={handleSubmit}
-            className="flex-1 h-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-sm disabled:opacity-40"
+            className="flex-1 h-9 rounded-lg btn-brand text-white font-semibold text-sm shadow-sm disabled:opacity-40"
           >
             Ajouter
           </Button>
@@ -357,12 +359,36 @@ function AddPlanDialog({
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const project = mockProjects.find((p) => p.id === id)
+  const router = useRouter()
+  const { projects, plans: allPlans, renameProject, createPlan, deletePlan } = useAppContext()
 
-  const [plans, setPlans] = useState<Plan[]>(() =>
-    mockPlans.filter((p) => p.projectId === id)
-  )
+  const project = projects.find((p) => p.id === id) ?? null
+  const plans = allPlans.filter((p) => p.projectId === id)
+
   const [showAdd, setShowAdd] = useState(false)
+
+  const handleLaunchAnalysis = useCallback(() => {
+    router.push(`/analyse?projectId=${id}`)
+  }, [id, router])
+
+  // ── Rename project ──────────────────────────────────────────────────────────
+  const [editingName, setEditingName] = useState(false)
+  const [nameDraft, setNameDraft] = useState('')
+  const nameInputRef = useRef<HTMLInputElement>(null)
+
+  const startRename = useCallback(() => {
+    setNameDraft(project?.name ?? '')
+    setEditingName(true)
+    setTimeout(() => nameInputRef.current?.select(), 50)
+  }, [project?.name])
+
+  const confirmRename = useCallback(() => {
+    const trimmed = nameDraft.trim()
+    if (trimmed && trimmed !== project?.name) {
+      renameProject(id, trimmed)
+    }
+    setEditingName(false)
+  }, [nameDraft, project?.name, id, renameProject])
 
   // Group by floor, sorted by floorOrder
   const floorGroups = useMemo(() => {
@@ -382,17 +408,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const totalLinear = plans.reduce((sum, p) => sum + p.totalLinear, 0)
 
   const handleDeletePlan = useCallback((planId: string) => {
-    setPlans((prev) => prev.filter((p) => p.id !== planId))
-  }, [])
+    deletePlan(planId)
+  }, [deletePlan])
 
   const handleDeleteFloor = useCallback((floor: string) => {
-    setPlans((prev) => prev.filter((p) => p.floor !== floor))
-  }, [])
+    plans.filter((p) => p.floor === floor).forEach((p) => deletePlan(p.id))
+  }, [plans, deletePlan])
 
   const handleAddPlan = useCallback(
     (floor: string, floorOrder: number, planNumber: string) => {
-      const newPlan: Plan = {
-        id: `plan-${Date.now()}`,
+      createPlan({
         projectId: id,
         name: planNumber,
         floor,
@@ -400,10 +425,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         status: 'en_attente',
         totalLinear: 0,
         networkGroups: [],
-      }
-      setPlans((prev) => [...prev, newPlan])
+      })
     },
-    [id]
+    [id, createPlan]
   )
 
   if (!project) {
@@ -433,7 +457,36 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div className="h-5 w-px bg-slate-200" />
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-base font-bold text-slate-900">{project.name}</h1>
+                  {editingName ? (
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        ref={nameInputRef}
+                        value={nameDraft}
+                        onChange={(e) => setNameDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') confirmRename()
+                          if (e.key === 'Escape') setEditingName(false)
+                        }}
+                        className="text-base font-bold text-slate-900 border border-blue-400 rounded-md px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-[#689AAF]/30 bg-white min-w-0 w-64"
+                      />
+                      <button onClick={confirmRename} className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors">
+                        <Check className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => setEditingName(false)} className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="group/name flex items-center gap-1.5">
+                      <h1 className="text-base font-bold text-slate-900">{project.name}</h1>
+                      <button
+                        onClick={startRename}
+                        className="flex h-5 w-5 items-center justify-center rounded text-slate-300 hover:text-slate-500 opacity-0 group-hover/name:opacity-100 transition-all"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
                   <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-full', projStatusCfg.cls)}>
                     {projStatusCfg.label}
                   </span>
@@ -442,13 +495,22 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
 
-            <button
-              onClick={() => setShowAdd(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm shadow-blue-200 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Ajouter un plan
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowAdd(true)}
+                className="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Ajouter un plan
+              </button>
+              <button
+                onClick={handleLaunchAnalysis}
+                className="flex items-center gap-2 btn-brand text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm shadow-blue-200 transition-colors"
+              >
+                <ScanSearch className="h-4 w-4" />
+                Lancer une analyse
+              </button>
+            </div>
           </div>
         </div>
 
@@ -467,8 +529,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <div className="mt-2 h-1.5 w-full rounded-full bg-slate-100">
                 <div
-                  className="h-1.5 rounded-full bg-blue-500 transition-all duration-500"
-                  style={{ width: plans.length > 0 ? `${(analyzedCount / plans.length) * 100}%` : '0%' }}
+                  className="h-1.5 rounded-full transition-all duration-500"
+                  style={{ width: plans.length > 0 ? `${(analyzedCount / plans.length) * 100}%` : '0%', background: 'linear-gradient(90deg, #203957, #689AAF)' }}
                 />
               </div>
             </div>
@@ -488,17 +550,25 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               animate={{ opacity: 1 }}
               className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 py-20 text-center"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 mb-3">
-                <Building2 className="h-5 w-5 text-slate-400" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 mb-4">
+                <ScanSearch className="h-6 w-6 text-blue-500" />
               </div>
-              <p className="text-sm font-semibold text-slate-600">Aucun plan pour ce projet</p>
-              <p className="text-xs text-slate-400 mt-1 mb-4">Ajoutez un premier plan pour commencer.</p>
+              <p className="text-sm font-semibold text-slate-700">Aucun plan analysé pour ce projet</p>
+              <p className="text-xs text-slate-400 mt-1 mb-5 max-w-xs">
+                Déposez un plan et choisissez son niveau (RDC, R+1…) pour lancer l&apos;analyse automatique.
+              </p>
+              <button
+                onClick={handleLaunchAnalysis}
+                className="flex items-center gap-2 btn-brand text-white text-sm font-semibold px-5 py-2.5 rounded-lg shadow-sm shadow-blue-200 transition-colors"
+              >
+                <ScanSearch className="h-4 w-4" />
+                Lancer une analyse
+              </button>
               <button
                 onClick={() => setShowAdd(true)}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
+                className="mt-3 text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2 transition-colors"
               >
-                <Plus className="h-3.5 w-3.5" />
-                Ajouter un plan
+                Ou ajouter un plan sans analyse
               </button>
             </motion.div>
           ) : (

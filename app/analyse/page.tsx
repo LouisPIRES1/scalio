@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Info, ChevronDown, Plus, Building2, Check } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Info, ChevronDown, Plus, Check, X } from 'lucide-react'
 import Link from 'next/link'
 import { AppShell } from '@/components/layout/app-shell'
 import { UploadZone } from '@/components/analyse/upload-zone'
 import { ProcessingModal } from '@/components/analyse/processing-modal'
 import { Button } from '@/components/ui/button'
-import { mockProjects } from '@/lib/mock-data'
+import { useAppContext } from '@/lib/app-context'
+import { savePlanFile } from '@/lib/storage-files'
+import type { Plan } from '@/types'
 import { cn } from '@/lib/utils'
 
 const FLOOR_OPTIONS = [
@@ -34,15 +36,17 @@ const FLOOR_OPTIONS = [
 
 type ProjectMode = 'existing' | 'new'
 
-export default function AnalysePage() {
+function AnalysePageInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const preselectedProjectId = searchParams.get('projectId') ?? ''
 
   // Step 1 — Plan
   const [file, setFile] = useState<File | null>(null)
 
   // Step 2 — Projet
   const [projectMode, setProjectMode] = useState<ProjectMode>('existing')
-  const [selectedProjectId, setSelectedProjectId] = useState('')
+  const [selectedProjectId, setSelectedProjectId] = useState(preselectedProjectId)
   const [newProjectName, setNewProjectName] = useState('')
   const [newClientName, setNewClientName] = useState('')
 
@@ -52,6 +56,13 @@ export default function AnalysePage() {
   const [planNumber, setPlanNumber] = useState('')
 
   const [isProcessing, setIsProcessing] = useState(false)
+  const [pendingPlanId, setPendingPlanId] = useState<string>('')
+
+  const { projects, createProject, createPlan } = useAppContext()
+
+  const preselectedProject = preselectedProjectId
+    ? projects.find((p) => p.id === preselectedProjectId) ?? null
+    : null
 
   const projectOk =
     projectMode === 'existing'
@@ -60,12 +71,32 @@ export default function AnalysePage() {
 
   const canSubmit = !!file && projectOk && !!floor && !!planNumber.trim()
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!canSubmit || !file) return
-    const prevUrl = sessionStorage.getItem('scalio_plan_url')
-    if (prevUrl) URL.revokeObjectURL(prevUrl)
-    sessionStorage.setItem('scalio_plan_url', URL.createObjectURL(file))
-    sessionStorage.setItem('scalio_plan_mime', file.type)
+
+    // Resolve or create project
+    let resolvedProjectId = selectedProjectId
+    if (projectMode === 'new') {
+      const newProject = createProject(newProjectName.trim(), newClientName.trim(), 'en_attente')
+      resolvedProjectId = newProject.id
+    }
+
+    // Create plan via context (auto-saves)
+    const floorOpt = FLOOR_OPTIONS.find((f) => f.label === floor) ?? { order: 0 }
+    const newPlan: Plan = createPlan({
+      projectId: resolvedProjectId,
+      name: planNumber.trim(),
+      floor,
+      floorOrder: floorOpt.order,
+      status: 'en_attente',
+      totalLinear: 0,
+      networkGroups: [],
+    })
+
+    // Persist the file in IndexedDB (survives browser close)
+    await savePlanFile(newPlan.id, file, file.type)
+
+    setPendingPlanId(newPlan.id)
     setIsProcessing(true)
   }
 
@@ -126,6 +157,26 @@ export default function AnalysePage() {
                 transition={{ duration: 0.2 }}
                 className="rounded-xl border border-slate-100 bg-white shadow-sm overflow-hidden"
               >
+                {/* Si projet pré-sélectionné depuis la page projet */}
+                {preselectedProject ? (
+                  <div className="flex items-center gap-3 px-4 py-3.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50">
+                      <Check className="h-4 w-4 text-emerald-600" strokeWidth={2.5} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">{preselectedProject.name}</p>
+                      <p className="text-xs text-slate-400 truncate">{preselectedProject.client}</p>
+                    </div>
+                    <Link
+                      href="/analyse"
+                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors shrink-0"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Changer
+                    </Link>
+                  </div>
+                ) : (
+                <>
                 {/* Mode toggle */}
                 <div className="flex border-b border-slate-100">
                   <button
@@ -133,7 +184,7 @@ export default function AnalysePage() {
                     className={cn(
                       'flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors',
                       projectMode === 'existing'
-                        ? 'text-blue-700 bg-blue-50 border-b-2 border-blue-600'
+                        ? 'text-[#203957] bg-[#EBF3F7] border-b-2 border-[#689AAF]'
                         : 'text-slate-500 hover:bg-slate-50'
                     )}
                   >
@@ -144,7 +195,7 @@ export default function AnalysePage() {
                     className={cn(
                       'flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors',
                       projectMode === 'new'
-                        ? 'text-blue-700 bg-blue-50 border-b-2 border-blue-600'
+                        ? 'text-[#203957] bg-[#EBF3F7] border-b-2 border-[#689AAF]'
                         : 'text-slate-500 hover:bg-slate-50'
                     )}
                   >
@@ -163,21 +214,21 @@ export default function AnalysePage() {
                       transition={{ duration: 0.15 }}
                       className="p-2 max-h-56 overflow-y-auto"
                     >
-                      {mockProjects.map((p) => (
+                      {projects.map((p) => (
                         <button
                           key={p.id}
                           onClick={() => setSelectedProjectId(p.id)}
                           className={cn(
                             'w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
                             selectedProjectId === p.id
-                              ? 'bg-blue-50 ring-1 ring-blue-200'
+                              ? 'bg-[#EBF3F7] ring-1 ring-[#ACCAD8]'
                               : 'hover:bg-slate-50'
                           )}
                         >
                           <div className={cn(
                             'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
                             selectedProjectId === p.id
-                              ? 'border-blue-600 bg-blue-600'
+                              ? 'border-[#689AAF] bg-[#689AAF]'
                               : 'border-slate-300'
                           )}>
                             {selectedProjectId === p.id && (
@@ -211,7 +262,7 @@ export default function AnalysePage() {
                             value={newProjectName}
                             onChange={(e) => setNewProjectName(e.target.value)}
                             placeholder="ex : Rénovation Gare du Nord"
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#689AAF]/30 focus:border-[#689AAF] transition-colors"
                           />
                         </div>
                         <div className="space-y-1.5">
@@ -223,13 +274,15 @@ export default function AnalysePage() {
                             value={newClientName}
                             onChange={(e) => setNewClientName(e.target.value)}
                             placeholder="ex : VINCI Construction"
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#689AAF]/30 focus:border-[#689AAF] transition-colors"
                           />
                         </div>
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
+                </>
+              )}
               </motion.div>
             </section>
 
@@ -251,7 +304,7 @@ export default function AnalysePage() {
                       <button
                         type="button"
                         onClick={() => setFloorOpen((v) => !v)}
-                        className="w-full flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:border-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                        className="w-full flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:border-[#689AAF] transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                       >
                         <span className={floor ? 'text-slate-900' : 'text-slate-400'}>
                           {floor || 'Sélectionner un étage'}
@@ -276,7 +329,7 @@ export default function AnalysePage() {
                                   className={cn(
                                     'w-full flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors',
                                     opt.label === floor
-                                      ? 'bg-blue-50 text-blue-700 font-semibold'
+                                      ? 'bg-blue-50 text-[#3D7A93] font-semibold'
                                       : 'text-slate-700 hover:bg-slate-50'
                                   )}
                                 >
@@ -302,15 +355,15 @@ export default function AnalysePage() {
                       onChange={(e) => setPlanNumber(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit() }}
                       placeholder="ex : RDC-A, SS1-B, R2…"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#689AAF]/30 focus:border-[#689AAF] transition-colors"
                     />
                   </div>
                 </div>
 
-                <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-100 p-3">
-                  <Info className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-blue-700">
-                    Scalio analysera automatiquement les réseaux présents et les encadrera par type.
+                <div className="flex items-start gap-2 rounded-lg bg-[#EBF3F7] border border-[#ACCAD8] p-3">
+                  <Info className="h-4 w-4 text-[#689AAF] shrink-0 mt-0.5" />
+                  <p className="text-xs text-[#3D7A93]">
+                    Constor analysera automatiquement les réseaux présents et les encadrera par type.
                     Vous pourrez sélectionner les réseaux à métrer en un clic.
                   </p>
                 </div>
@@ -327,7 +380,7 @@ export default function AnalysePage() {
               <Button
                 onClick={handleSubmit}
                 disabled={!canSubmit}
-                className="gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm shadow-blue-200 disabled:opacity-40 disabled:cursor-not-allowed text-sm px-5 h-9"
+                className="gap-2 text-white font-semibold rounded-lg shadow-sm disabled:opacity-40 disabled:cursor-not-allowed text-sm px-5 h-9 btn-brand"
               >
                 Lancer l'analyse
                 <ArrowRight className="h-4 w-4" />
@@ -337,8 +390,16 @@ export default function AnalysePage() {
         </div>
       </div>
 
-      <ProcessingModal open={isProcessing} onComplete={() => router.push('/analyse/gare-du-nord')} />
+      <ProcessingModal open={isProcessing} onComplete={() => router.push(`/analyse/${pendingPlanId}`)} />
     </AppShell>
+  )
+}
+
+export default function AnalysePage() {
+  return (
+    <Suspense>
+      <AnalysePageInner />
+    </Suspense>
   )
 }
 
@@ -350,7 +411,7 @@ function StepHeader({ n, label, done, active }: { n: number; label: string; done
     <div className="flex items-center gap-3 mb-4">
       <div className={cn(
         'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors',
-        done ? 'bg-emerald-500 text-white' : isActive ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'
+        done ? 'bg-emerald-500 text-white' : isActive ? 'bg-[#203957] text-white' : 'bg-slate-200 text-slate-400'
       )}>
         {done ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : n}
       </div>
@@ -364,7 +425,7 @@ function StepHeader({ n, label, done, active }: { n: number; label: string; done
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; className: string }> = {
     en_attente: { label: 'En attente', className: 'bg-slate-100 text-slate-500' },
-    en_cours:   { label: 'En cours',   className: 'bg-blue-50 text-blue-600'   },
+    en_cours:   { label: 'En cours',   className: 'bg-[#EBF3F7] text-[#4A7A93]'   },
     termine:    { label: 'Terminé',    className: 'bg-emerald-50 text-emerald-700' },
   }
   const s = map[status] ?? map['en_attente']
